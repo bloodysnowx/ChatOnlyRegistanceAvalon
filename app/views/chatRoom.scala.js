@@ -20,6 +20,8 @@ $(function() {
             $("#onError").show()
             return
         } else $("#onChat").show()
+        
+        if($.inArray('@username', data.targetSet) < 0) return
 
         // Create the message element
         var el = $('<div class="message"><span></span><p></p></div>')

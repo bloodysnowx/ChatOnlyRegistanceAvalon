@@ -72,7 +72,11 @@ class ChatRoom extends Actor {
 
     case NotifyJoin(username) => { notifyAll("join", username, "has entered the room") }
     
-    case Talk(username, text) => { notifyAll("talk", username, text) }
+    case Talk(username, text) => {
+      val trimmedText = text.trim()
+      if(trimmedText.startsWith("/")) notify("talk", username, text, Set("Robot", username))
+      else notifyAll("talk", username, text)
+    }
     
     case Quit(username) => {
       members = members - username
@@ -80,16 +84,21 @@ class ChatRoom extends Actor {
     }
   }
   
-  def notifyAll(kind: String, user: String, text: String) {
+  def notify(kind: String, user: String, text: String, targetSet: Set[String]) {
     val msg = JsObject(
       Seq(
         "kind" -> JsString(kind),
         "user" -> JsString(user),
         "message" -> JsString(text),
-        "members" -> JsArray(members.toList.map(JsString))
+        "members" -> JsArray(members.toList.map(JsString)),
+        "targetSet" -> JsArray(targetSet.toList.map(JsString))
       )
     )
     chatChannel.push(msg)
+  }
+  
+  def notifyAll(kind: String, user: String, text: String) {
+    notify(kind, user, text, members)
   }
 }
 
