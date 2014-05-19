@@ -6,9 +6,7 @@ $(function() {
     var chatSocket = new WS("@routes.Application.chat(username).webSocketURL()")
 
     var sendMessage = function() {
-        chatSocket.send(JSON.stringify(
-            {text: $("#talk").val()}
-        ))
+        chatSocket.send(JSON.stringify( {text: $("#talk").val()} ))
         $("#talk").val('')
     }
 
@@ -21,9 +19,7 @@ $(function() {
             $("#onError span").text(data.error)
             $("#onError").show()
             return
-        } else {
-            $("#onChat").show()
-        }
+        } else $("#onChat").show()
 
         // Create the message element
         var el = $('<div class="message"><span></span><p></p></div>')

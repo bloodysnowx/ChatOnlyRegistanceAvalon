@@ -1,6 +1,6 @@
 import play.Project._
 
-name := "websocket-chat"
+name := "chat only Resistance Avalon"
 
 version := "1.0"
 
