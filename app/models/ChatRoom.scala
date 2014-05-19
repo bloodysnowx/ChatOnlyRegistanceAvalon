@@ -16,13 +16,12 @@ import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 
 object ChatRoom {
-  
   implicit val timeout = Timeout(1 second)
   
   lazy val default = {
     val roomActor = Akka.system.actorOf(Props[ChatRoom])
     
-    // Create a bot user (just for fun)
+    // Create a bot user (GM)
     Robot(roomActor)
     
     roomActor
@@ -44,9 +43,7 @@ object ChatRoom {
         (iteratee,enumerator)
         
       case CannotConnect(error) => 
-      
         // Connection error
-
         // A finished Iteratee sending EOF
         val iteratee = Done[JsValue,Unit]((),Input.EOF)
 
@@ -54,20 +51,15 @@ object ChatRoom {
         val enumerator =  Enumerator[JsValue](JsObject(Seq("error" -> JsString(error)))).andThen(Enumerator.enumInput(Input.EOF))
         
         (iteratee,enumerator)
-         
     }
-
   }
-  
 }
 
 class ChatRoom extends Actor {
-  
   var members = Set.empty[String]
   val (chatEnumerator, chatChannel) = Concurrent.broadcast[JsValue]
 
   def receive = {
-    
     case Join(username) => {
       if(members.contains(username)) {
         sender ! CannotConnect("This username is already used")
@@ -78,19 +70,14 @@ class ChatRoom extends Actor {
       }
     }
 
-    case NotifyJoin(username) => {
-      notifyAll("join", username, "has entered the room")
-    }
+    case NotifyJoin(username) => { notifyAll("join", username, "has entered the room") }
     
-    case Talk(username, text) => {
-      notifyAll("talk", username, text)
-    }
+    case Talk(username, text) => { notifyAll("talk", username, text) }
     
     case Quit(username) => {
       members = members - username
       notifyAll("quit", username, "has left the room")
     }
-    
   }
   
   def notifyAll(kind: String, user: String, text: String) {
@@ -99,14 +86,11 @@ class ChatRoom extends Actor {
         "kind" -> JsString(kind),
         "user" -> JsString(user),
         "message" -> JsString(text),
-        "members" -> JsArray(
-          members.toList.map(JsString)
-        )
+        "members" -> JsArray(members.toList.map(JsString))
       )
     )
     chatChannel.push(msg)
   }
-  
 }
 
 case class Join(username: String)

@@ -16,7 +16,6 @@ import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 
 object Robot {
-  
   def apply(chatRoom: ActorRef) {
     
     // Create an Iteratee that logs all messages to the console.
@@ -37,5 +36,9 @@ object Robot {
       chatRoom,
       Talk("Robot", "I'm still alive")
     )
+  }
+  
+  def startGame() {
+    
   }
 }

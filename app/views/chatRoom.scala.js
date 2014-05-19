@@ -28,6 +28,8 @@ $(function() {
         $(el).addClass(data.kind)
         if(data.user == '@username') $(el).addClass('me')
         $('#messages').append(el)
+        
+        $('#main').height($('#main').height() + 27)
 
         // Update the members list
         $("#members").html('')
