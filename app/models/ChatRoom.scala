@@ -28,11 +28,8 @@ object ChatRoom {
   }
 
   def join(username:String):scala.concurrent.Future[(Iteratee[JsValue,_],Enumerator[JsValue])] = {
-
     (default ? Join(username)).map {
-      
       case Connected(enumerator) => 
-      
         // Create an Iteratee to consume the feed
         val iteratee = Iteratee.foreach[JsValue] { event =>
           default ! Talk(username, (event \ "text").as[String])
@@ -74,8 +71,19 @@ class ChatRoom extends Actor {
     
     case Talk(username, text) => {
       val trimmedText = text.trim()
-      if(trimmedText.startsWith("/")) notify("talk", username, text, Set("Robot", username))
+      if(trimmedText.startsWith("/")) { 
+        if(trimmedText.startsWith("/whisper")) {
+          val splittedTexts = trimmedText.split(' ')
+          val target = splittedTexts(1)
+          notify("talk", username, text, Set(username, target))
+        }
+        else notify("talk", username, text, Set("Robot", username))
+      }
       else notifyAll("talk", username, text)
+    }
+    
+    case Whisper(username, target, text) => {
+      notify("talk", username, text, Set(username, target))
     }
     
     case Quit(username) => {
@@ -105,6 +113,7 @@ class ChatRoom extends Actor {
 case class Join(username: String)
 case class Quit(username: String)
 case class Talk(username: String, text: String)
+case class Whisper(username: String, target: String, text: String)
 case class NotifyJoin(username: String)
 
 case class Connected(enumerator:Enumerator[JsValue])
