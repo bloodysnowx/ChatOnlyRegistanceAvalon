@@ -300,6 +300,21 @@ object Robot {
   }
   
   object AssassinateWaitingState extends GameState {
+    override def enter(chatRoom: ActorRef):GameState = {
+      chatRoom ! Talk("Robot", "Assassin is " + Assassin + ", " + helpMessages(7))
+      this
+    }
     
+    override def assassin(username: String, target: String, chatRoom: ActorRef):GameState = {
+      if(username != Assassin) chatRoom ! Talk("Robot", username + " is not Assassin.")
+      else if(!players.contains(target)) chatRoom ! Talk("Robot", target + "does not exist.")
+      else if(target == Merlin) {
+        chatRoom ! Talk("Robot", username + "assasinated Merlin(" + target + ")!")
+      } else {
+        chatRoom ! Talk("Robot", username + "assasinated " + target + ". He is not Merlin.")
+        chatRoom ! Talk("Robot", "Merlin is " + Merlin + ".")
+      }
+      this
+    }
   }
 }
