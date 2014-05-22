@@ -31,7 +31,7 @@ $(function() {
         if(data.user == '@username') $(el).addClass('me')
         $('#messages').append(el)
         
-        $('#main').height($('#main').height() + 27)
+        $('#main').height($('#messages').height() + 60)
 
         // Update the members list
         $("#members").html('')

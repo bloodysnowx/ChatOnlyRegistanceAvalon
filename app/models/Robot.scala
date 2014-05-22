@@ -17,12 +17,12 @@ import play.api.libs.concurrent.Execution.Implicits._
 
 object Robot {
   var state:GameState = GameStartWaitingState;
-  var players:List[String] = null
+  var players:List[String] = List()
   var Merlin:String = null
   var Percival:String = null
   var Assassin:String = null
   var Lady:String = null
-  var Evils:List[String] = null
+  var Evils:List[String] = List()
   var leaderCount = 0
   var Ladied:List[String] = List()
   var elected:List[String] = List()
@@ -106,10 +106,10 @@ object Robot {
     def assassin(username: String, target: String, chatRoom: ActorRef):GameState = { this }
     def status(username: String, chatRoom: ActorRef):GameState = {
       chatRoom ! Whisper("Robot", username, "current Lady is " + Lady)
-      chatRoom ! Whisper("Robot", username, "Ladied are " + Ladied.mkString(", "))
-      chatRoom ! Whisper("Robot", username, "current Leader is " + getLeader + ", leaderCount is " + leaderCount)
-      chatRoom ! Whisper("Robot", username, "Leadar order is " + players.mkString(", "))
-      chatRoom ! Whisper("Robot", username, "elected are " + elected.mkString(", "))
+      if(Ladied.length > 0) chatRoom ! Whisper("Robot", username, "Ladied are " + Ladied.mkString(", "))
+      if(players.length > 0) chatRoom ! Whisper("Robot", username, "current Leader is " + getLeader + ", leaderCount is " + leaderCount)
+      if(players.length > 0) chatRoom ! Whisper("Robot", username, "Leadar order is " + players.mkString(", "))
+      if(elected.length > 0) chatRoom ! Whisper("Robot", username, "elected are " + elected.mkString(", "))
       chatRoom ! Whisper("Robot", username, "questCount is " + questCount)
       chatRoom ! Whisper("Robot", username, "voteCount is " + voteCount)
       chatRoom ! Whisper("Robot", username, "blueWins is " + blueWins + ", redWins is " + redWins)
@@ -267,8 +267,7 @@ object Robot {
       success = 0
       fail = 0
       questCount = questCount + 1
-      chatRoom ! Talk("Robot", "current Members are " + elected.mkString(", "))
-      chatRoom ! Talk("Robot", helpMessages(6))
+      chatRoom ! Talk("Robot", "current Members are " + elected.mkString(", ") + ". " + helpMessages(6))
       this
     }
     
