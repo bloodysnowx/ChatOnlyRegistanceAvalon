@@ -116,7 +116,9 @@ object Robot {
       
       if(username == Merlin) chatRoom ! Whisper("Robot", username, "You are Merlin. Evils are " + Evils.mkString(", "))
       if(username == Percival) chatRoom ! Whisper("Robot", username, "You are Percival. Merlin is " + Merlin)
+      if(username == Assassin) chatRoom ! Whisper("Robot", username, "You are Assassin.")
       if(Evils.contains(username)) chatRoom ! Whisper("Robot", username, "You are Evil. Evils are " + Evils.mkString(", "))
+
       
       this
     }
