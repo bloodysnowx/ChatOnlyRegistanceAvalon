@@ -104,7 +104,22 @@ object Robot {
     def vote(username: String, decision: String, chatRoom: ActorRef):GameState = { this }
     def quest(username: String, decision: String, chatRoom: ActorRef):GameState = { this }
     def assassin(username: String, target: String, chatRoom: ActorRef):GameState = { this }
-    def status(username: String, chatRoom: ActorRef):GameState = { this }
+    def status(username: String, chatRoom: ActorRef):GameState = {
+      chatRoom ! Whisper("Robot", username, "current Lady is " + Lady)
+      chatRoom ! Whisper("Robot", username, "Ladied are " + Ladied.mkString(", "))
+      chatRoom ! Whisper("Robot", username, "current Leader is " + getLeader + ", leaderCount is " + leaderCount)
+      chatRoom ! Whisper("Robot", username, "Leadar order is " + players.mkString(", "))
+      chatRoom ! Whisper("Robot", username, "elected are " + elected.mkString(", "))
+      chatRoom ! Whisper("Robot", username, "questCount is " + questCount)
+      chatRoom ! Whisper("Robot", username, "voteCount is " + voteCount)
+      chatRoom ! Whisper("Robot", username, "blueWins is " + blueWins + ", redWins is " + redWins)
+      
+      if(username == Merlin) chatRoom ! Whisper("Robot", username, "You are Merlin. Evils are " + Evils.mkString(", "))
+      if(username == Percival) chatRoom ! Whisper("Robot", username, "You are Percival. Merlin is " + Merlin)
+      if(Evils.contains(username)) Whisper("Robot", username, "You are Evil. Evils are " + Evils.mkString(", "))
+      
+      this
+    }
     def help(username: String, chatRoom: ActorRef):GameState = {
       helpMessages.map(message => chatRoom ! Whisper("Robot", username, message))
       return this
@@ -150,7 +165,7 @@ object Robot {
     
     override def lady(username: String, target: String, chatRoom: ActorRef):GameState = {
       if(!players.contains(target)) {
-        chatRoom ! Talk("Robot", target + "does not exist.")
+        chatRoom ! Talk("Robot", target + " does not exist.")
         return this
       }
       if(Ladied.contains(target)) {
@@ -158,8 +173,8 @@ object Robot {
         return this
       }
       
-      chatRoom ! Talk("Robot", Lady + " は " + target + "の陣営を確認しました")
-      chatRoom ! Whisper("Robot", Lady, target + " is " + (if (Evils.contains(target)) " red." else " blue."))
+      chatRoom ! Talk("Robot", Lady + " は " + target + " の陣営を確認しました")
+      chatRoom ! Whisper("Robot", Lady, target + " is " + (if (Evils.contains(target)) "red." else "blue."))
       Lady = target
       Ladied = target :: Ladied
       
@@ -173,8 +188,7 @@ object Robot {
     override def enter(chatRoom: ActorRef):GameState = {
       chatRoom ! Talk("Robot", "Leadar order is " + players.mkString(", "))
       chatRoom ! Talk("Robot", "current Leadar is " + getLeader + "(" + voteCount + "), " + helpMessages(3))
-      chatRoom ! Talk("Robot", "Please elect " + questMembersCount(players.length)(questCount) + "members")
-      leaderCount = leaderCount + 1
+      chatRoom ! Talk("Robot", "Please elect " + questMembersCount(players.length)(questCount) + " members")
       elected = List()
       this
     }
@@ -183,8 +197,8 @@ object Robot {
       else if(target == "reset") {
         elected = List()
         chatRoom ! Talk("Robot", "選出したメンバーを初期化します")
-      } else if(!players.contains(target)) chatRoom ! Talk("Robot", target + "does not exist.")
-      else if(elected.contains(target)) chatRoom ! Talk("Robot", target + "is already elected.")
+      } else if(!players.contains(target)) chatRoom ! Talk("Robot", target + " does not exist.")
+      else if(elected.contains(target)) chatRoom ! Talk("Robot", target + " is already elected.")
       else {
         elected = target :: elected
         chatRoom ! Talk("Robot", "current Members are " + elected.mkString(", "))
@@ -206,21 +220,22 @@ object Robot {
       supports = List[String]()
       oppositions = List[String]()
       voteCount = voteCount + 1
-      Talk("Robot", voteCount + "回目の投票を始めます。 " + helpMessages(5))
+      leaderCount = leaderCount + 1
+      chatRoom ! Talk("Robot", voteCount + "回目の投票を始めます。 " + helpMessages(5))
       if(voteCount == 5) QuestWaitingState.enter(chatRoom) else this
     }
     
     override def vote(username: String, decision: String, chatRoom: ActorRef):GameState = {
-      if(voted.contains(username)) chatRoom ! Talk("Robot", username + "is already voted.")
+      if(voted.contains(username)) chatRoom ! Talk("Robot", username + " is already voted.")
       else {
         if(decision == "true") {
           voted = username :: voted
           supports = username :: supports
-          chatRoom ! Talk("Robot", username + "is voted.")
+          chatRoom ! Talk("Robot", username + " is voted.")
         } else if(decision == "false") {
           voted = username :: voted
           oppositions = username :: oppositions
-          chatRoom ! Talk("Robot", username + "is voted.")
+          chatRoom ! Talk("Robot", username + " is voted.")
         } else {
           chatRoom ! Talk("Robot", username + "'s selection is invalid.")
         }
@@ -229,8 +244,10 @@ object Robot {
           chatRoom ! Talk("Robot", "supports are " + supports.mkString(", "))
           chatRoom ! Talk("Robot", "poopsitions are " + oppositions.mkString(", "))
           if(supports.length > oppositions.length) {
+            chatRoom ! Talk("Robot", "リーダーの選出が可決されました。")
             return QuestWaitingState.enter(chatRoom)
           } else {
+            chatRoom ! Talk("Robot", "リーダーの選出が否決されました。")
             return ElectWaitingState.enter(chatRoom)
           }
         }
@@ -256,17 +273,17 @@ object Robot {
     }
     
     override def quest(username: String, decision: String, chatRoom: ActorRef):GameState = {
-      if(voted.contains(username)) chatRoom ! Talk("Robot", username + "is already voted.")
-      else if(!elected.contains(username)) chatRoom ! Talk("Robot", username + "is not a quest member.")
+      if(voted.contains(username)) chatRoom ! Talk("Robot", username + " is already voted.")
+      else if(!elected.contains(username)) chatRoom ! Talk("Robot", username + " is not a quest member.")
       else {
         if(decision == "true") {
           voted = username :: voted
           success = success + 1
-          chatRoom ! Talk("Robot", username + "is voted.")
+          chatRoom ! Talk("Robot", username + " is voted.")
         } else if(decision == "false") {
           voted = username :: voted
           fail = fail + 1
-          chatRoom ! Talk("Robot", username + "is voted.")
+          chatRoom ! Talk("Robot", username + " is voted.")
         } else {
           chatRoom ! Talk("Robot", username + "'s selection is invalid.")
         }
@@ -307,11 +324,11 @@ object Robot {
     
     override def assassin(username: String, target: String, chatRoom: ActorRef):GameState = {
       if(username != Assassin) chatRoom ! Talk("Robot", username + " is not Assassin.")
-      else if(!players.contains(target)) chatRoom ! Talk("Robot", target + "does not exist.")
+      else if(!players.contains(target)) chatRoom ! Talk("Robot", target + " does not exist.")
       else if(target == Merlin) {
-        chatRoom ! Talk("Robot", username + "assasinated Merlin(" + target + ")!")
+        chatRoom ! Talk("Robot", username + " assassinated Merlin(" + target + ")!")
       } else {
-        chatRoom ! Talk("Robot", username + "assasinated " + target + ". He is not Merlin.")
+        chatRoom ! Talk("Robot", username + " assassinated " + target + ". He is not Merlin.")
         chatRoom ! Talk("Robot", "Merlin is " + Merlin + ".")
       }
       this
