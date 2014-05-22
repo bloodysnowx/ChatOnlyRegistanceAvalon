@@ -116,7 +116,7 @@ object Robot {
       
       if(username == Merlin) chatRoom ! Whisper("Robot", username, "You are Merlin. Evils are " + Evils.mkString(", "))
       if(username == Percival) chatRoom ! Whisper("Robot", username, "You are Percival. Merlin is " + Merlin)
-      if(Evils.contains(username)) Whisper("Robot", username, "You are Evil. Evils are " + Evils.mkString(", "))
+      if(Evils.contains(username)) chatRoom ! Whisper("Robot", username, "You are Evil. Evils are " + Evils.mkString(", "))
       
       this
     }
@@ -138,6 +138,8 @@ object Robot {
     
     def setupGames(chatRoom: ActorRef) {
       val forElection = scala.util.Random.shuffle(players)
+      Assassin = forElection(2)
+      chatRoom ! Whisper("Robot", Assassin, "You are Assassin.")
       if(players.length < 7) Evils = List(forElection(2), forElection(3))
       else if(players.length < 10) Evils = List(forElection(2), forElection(3), forElection(4))
       else Evils = List(forElection(2), forElection(3), forElection(4), forElection(5))
@@ -159,6 +161,7 @@ object Robot {
   
   object LadyWaitingState extends GameState {
     override def enter(chatRoom: ActorRef):GameState = {
+      if(Lady == null) return ElectWaitingState.enter(chatRoom)
       chatRoom ! Talk("Robot", "Lady is " + Lady + ", " + helpMessages(2))
       this
     }
