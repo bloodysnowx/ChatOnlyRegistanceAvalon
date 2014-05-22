@@ -17,15 +17,37 @@ import play.api.libs.concurrent.Execution.Implicits._
 
 object Robot {
   var state:GameState = GameStartWaitingState;
+  var players:List[String] = null
+  var Merlin:String = null
+  var Percival:String = null
+  var Assassin:String = null
+  var Lady:String = null
+  var Evils:List[String] = null
+  var leaderCount = 0
+  var Ladied:List[String] = List()
+  var elected:List[String] = List()
+  var voteCount = 0
+  var questCount = 0
+  var blueWins = 0
+  var redWins = 0
+  
+  val questMembersCount = Array(Array(), Array(), Array(), Array(), Array(), 
+      Array(2, 3, 2, 3, 3),
+      Array(2, 3, 4, 3, 4),
+      Array(2, 3, 3, 4, 4),
+      Array(3, 4, 4, 5, 5),
+      Array(3, 4, 4, 5, 5),
+      Array(3, 4, 4, 5, 5))
   
   def receiveMessage(event: JsValue, chatRoom: ActorRef) {
     Logger("robot").info(event.toString)
     val message = (event \ "message").as[String].trim()
     val username = (event \ "user").as[String]
+    val members = (event \ "members").as[List[String]] filter ( member => member != "Robot" )
     val splittedMessage = message.split(" ")
     if(username.equals("Robot")) return
     if(message.startsWith("/")) {
-      if(message.startsWith("/game start")) state = state.startGame(chatRoom)
+      if(message.startsWith("/game start")) state = state.startGame(username, chatRoom, members)
       else if(message.startsWith("/lady ")) state = state.lady(username, splittedMessage(1), chatRoom)
       else if(message.startsWith("/elect ")) state = state.elect(username, splittedMessage(1), chatRoom)
       else if(message.startsWith("/vote ")) state = state.vote(username, splittedMessage(1), chatRoom)
@@ -59,15 +81,7 @@ object Robot {
   }
   
   class GameState {
-    def startGame(chatRoom: ActorRef):GameState = { this }
-    def lady(username: String, target: String, chatRoom: ActorRef):GameState = { this }
-    def elect(username: String, target: String, chatRoom: ActorRef):GameState = { this }
-    def vote(username: String, decision: String, chatRoom: ActorRef):GameState = { this }
-    def quest(username: String, decision: String, chatRoom: ActorRef):GameState = { this }
-    def assassin(username: String, target: String, chatRoom: ActorRef):GameState = { this }
-    def status(username: String, chatRoom: ActorRef):GameState = { this }
-    def help(username: String, chatRoom: ActorRef):GameState = {
-      var helpMessages:Seq[String] = Seq(
+    val helpMessages:Seq[String] = Seq(
           "These commands are available:",
           "/game start           --- ゲームを開始します。",
           "/lady [name]          --- [name]を占います。正義陣営の場合は[blue]と、悪陣営の場合は[red]と出力されます。",
@@ -79,16 +93,213 @@ object Robot {
           "/status               --- 現在の状況を表示します。",
           "/help                 --- ヘルプメッセージを表示します。"
       )
+    
+    def enter(chatRoom: ActorRef):GameState = { this }
+    def startGame(username: String, chatRoom: ActorRef, members: List[String]):GameState = {
+      chatRoom ! Whisper("Robot", username, "Game is already started.")
+      this
+    }
+    def lady(username: String, target: String, chatRoom: ActorRef):GameState = { this }
+    def elect(username: String, target: String, chatRoom: ActorRef):GameState = { this }
+    def vote(username: String, decision: String, chatRoom: ActorRef):GameState = { this }
+    def quest(username: String, decision: String, chatRoom: ActorRef):GameState = { this }
+    def assassin(username: String, target: String, chatRoom: ActorRef):GameState = { this }
+    def status(username: String, chatRoom: ActorRef):GameState = { this }
+    def help(username: String, chatRoom: ActorRef):GameState = {
       helpMessages.map(message => chatRoom ! Whisper("Robot", username, message))
       return this
     }
   }
   
   object GameStartWaitingState extends GameState {
+    override def startGame(username: String, chatRoom: ActorRef, members: List[String]):GameState = {
+      if(members.length < 5) { chatRoom ! Talk("Robot", "members.length must be greater than 4"); return this }
+      if(members.length > 10) { chatRoom ! Talk("Robot", "members.length must be less than 11"); return this }
+      chatRoom ! Talk("Robot", "Game will start now!")
+      players = members
+      setupGames(chatRoom)
+      ElectWaitingState.enter(chatRoom)
+    }
     
+    def setupGames(chatRoom: ActorRef) {
+      val forElection = scala.util.Random.shuffle(players)
+      if(players.length < 7) Evils = List(forElection(2), forElection(3))
+      else if(players.length < 10) Evils = List(forElection(2), forElection(3), forElection(4))
+      else Evils = List(forElection(2), forElection(3), forElection(4), forElection(5))
+      Merlin = forElection(0)
+      chatRoom ! Whisper("Robot", Merlin, "You are Merlin. Evils are " + Evils.mkString(", "))
+      if(players.length > 5) {
+        Percival = forElection(1)
+        chatRoom ! Whisper("Robot", Percival, "You are Percival. Merlin is " + Merlin)
+      }
+      Evils.map(evil => chatRoom ! Whisper("Robot", evil, "You are Evil. Evils are " + Evils.mkString(", ")))
+      players = scala.util.Random.shuffle(players)
+      if(players.length > 6) {
+        Lady = players.last
+        chatRoom ! Talk("Robot", "Lady is " + Lady)
+        Ladied = Lady :: Ladied
+      }
+    }
   }
   
   object LadyWaitingState extends GameState {
+    override def enter(chatRoom: ActorRef):GameState = {
+      chatRoom ! Talk("Robot", "Lady is " + Lady + ", " + helpMessages(2))
+      this
+    }
+    
+    override def lady(username: String, target: String, chatRoom: ActorRef):GameState = {
+      if(!players.contains(target)) {
+        chatRoom ! Talk("Robot", target + "does not exist.")
+        return this
+      }
+      if(Ladied.contains(target)) {
+        chatRoom ! Talk("Robot", target + " は既に泉の乙女所持者です")
+        return this
+      }
+      
+      chatRoom ! Talk("Robot", Lady + " は " + target + "の陣営を確認しました")
+      chatRoom ! Whisper("Robot", Lady, target + " is " + (if (Evils.contains(target)) " red." else " blue."))
+      Lady = target
+      Ladied = target :: Ladied
+      
+      ElectWaitingState.enter(chatRoom)
+    }
+  }
+  
+  def getLeader:String = { players(leaderCount % players.length) }
+  
+  object ElectWaitingState extends GameState {
+    override def enter(chatRoom: ActorRef):GameState = {
+      chatRoom ! Talk("Robot", "Leadar order is " + players.mkString(", "))
+      chatRoom ! Talk("Robot", "current Leadar is " + getLeader + "(" + voteCount + "), " + helpMessages(3))
+      chatRoom ! Talk("Robot", "Please elect " + questMembersCount(players.length)(questCount) + "members")
+      leaderCount = leaderCount + 1
+      elected = List()
+      this
+    }
+    override def elect(username: String, target: String, chatRoom: ActorRef):GameState = {
+      if(username != getLeader) chatRoom ! Talk("Robot", username + " is not Leader.")
+      else if(target == "reset") {
+        elected = List()
+        chatRoom ! Talk("Robot", "選出したメンバーを初期化します")
+      } else if(!players.contains(target)) chatRoom ! Talk("Robot", target + "does not exist.")
+      else if(elected.contains(target)) chatRoom ! Talk("Robot", target + "is already elected.")
+      else {
+        elected = target :: elected
+        chatRoom ! Talk("Robot", "current Members are " + elected.mkString(", "))
+        if(elected.length == questMembersCount(players.length)(questCount)) {
+          return VoteWaitingState.enter(chatRoom)
+        }
+      }
+      this
+    }
+  }
+  
+  object VoteWaitingState extends GameState {
+    var voted = List[String]()
+    var supports = List[String]()
+    var oppositions = List[String]()
+    
+    override def enter(chatRoom: ActorRef):GameState = {
+      voted = List[String]()
+      supports = List[String]()
+      oppositions = List[String]()
+      voteCount = voteCount + 1
+      Talk("Robot", voteCount + "回目の投票を始めます。 " + helpMessages(5))
+      if(voteCount == 5) QuestWaitingState.enter(chatRoom) else this
+    }
+    
+    override def vote(username: String, decision: String, chatRoom: ActorRef):GameState = {
+      if(voted.contains(username)) chatRoom ! Talk("Robot", username + "is already voted.")
+      else {
+        if(decision == "true") {
+          voted = username :: voted
+          supports = username :: supports
+          chatRoom ! Talk("Robot", username + "is voted.")
+        } else if(decision == "false") {
+          voted = username :: voted
+          oppositions = username :: oppositions
+          chatRoom ! Talk("Robot", username + "is voted.")
+        } else {
+          chatRoom ! Talk("Robot", username + "'s selection is invalid.")
+        }
+        
+        if(voted.length == players.length) {
+          chatRoom ! Talk("Robot", "supports are " + supports.mkString(", "))
+          chatRoom ! Talk("Robot", "poopsitions are " + oppositions.mkString(", "))
+          if(supports.length > oppositions.length) {
+            return QuestWaitingState.enter(chatRoom)
+          } else {
+            return ElectWaitingState.enter(chatRoom)
+          }
+        }
+      }
+      this
+    }
+  }
+  
+  object QuestWaitingState extends GameState {
+    var success = 0
+    var fail = 0
+    var voted = List[String]()
+    
+    override def enter(chatRoom: ActorRef):GameState = {
+      voteCount = 0
+      voted = List[String]()
+      success = 0
+      fail = 0
+      questCount = questCount + 1
+      chatRoom ! Talk("Robot", "current Members are " + elected.mkString(", "))
+      chatRoom ! Talk("Robot", helpMessages(6))
+      this
+    }
+    
+    override def quest(username: String, decision: String, chatRoom: ActorRef):GameState = {
+      if(voted.contains(username)) chatRoom ! Talk("Robot", username + "is already voted.")
+      else if(!elected.contains(username)) chatRoom ! Talk("Robot", username + "is not a quest member.")
+      else {
+        if(decision == "true") {
+          voted = username :: voted
+          success = success + 1
+          chatRoom ! Talk("Robot", username + "is voted.")
+        } else if(decision == "false") {
+          voted = username :: voted
+          fail = fail + 1
+          chatRoom ! Talk("Robot", username + "is voted.")
+        } else {
+          chatRoom ! Talk("Robot", username + "'s selection is invalid.")
+        }
+        
+        if(voted.length == elected.length) {
+          if(fail == 0) {
+            blueWins = blueWins + 1
+            chatRoom ! Talk("Robot", "Quest is successed with " + fail + " fails.")
+          } else if(fail == 1 && players.length > 6 && questCount == 4) {
+        	blueWins = blueWins + 1
+        	chatRoom ! Talk("Robot", "Quest is successed with " + fail + " fails.")
+          } else {
+            redWins = redWins + 1
+            chatRoom ! Talk("Robot", "Quest is faild with " + fail + " fails.")
+          }
+          
+          if(blueWins == 3) {
+            chatRoom ! Talk("Robot", "Quest is won by Blue. " + blueWins + " / " + redWins)
+            return AssassinateWaitingState.enter(chatRoom)
+          } else if(redWins == 3) {
+            chatRoom ! Talk("Robot", "Quest is won by Red. " + blueWins + " / " + redWins)
+          } else if(questCount > 1) {
+            return LadyWaitingState.enter(chatRoom)
+          } else {
+            return ElectWaitingState.enter(chatRoom)
+          }
+        }
+      }
+      this
+    }
+  }
+  
+  object AssassinateWaitingState extends GameState {
     
   }
 }
