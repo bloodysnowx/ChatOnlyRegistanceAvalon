@@ -73,7 +73,7 @@ body {
 
 #talk {
     position: absolute;
-    bottom: 0;
+    top: 0;
     left: 0;
     right: 0;
     width: 570px;
@@ -106,6 +106,10 @@ body {
 
 .message.me {
     background: #FFC;
+}
+
+.message.robot {
+	background: #77FFFF;
 }
 
 .message.join, .message.quit {

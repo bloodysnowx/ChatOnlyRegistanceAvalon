@@ -4,7 +4,8 @@ $(function() {
 
     var WS = window['MozWebSocket'] ? MozWebSocket : WebSocket
     var chatSocket = new WS("@routes.Application.chat(username).webSocketURL()")
-
+    $("#onChat").show()
+    
     var sendMessage = function() {
         chatSocket.send(JSON.stringify( {text: $("#talk").val()} ))
         $("#talk").val('')
@@ -29,9 +30,11 @@ $(function() {
         $("p", el).text(data.message)
         $(el).addClass(data.kind)
         if(data.user == '@username') $(el).addClass('me')
-        $('#messages').append(el)
+        if(data.user == "Robot") $(el).addClass('robot')
+        $('#messages').prepend(el)
         
-        $('#main').height($('#messages').height() + 60)
+        
+        $('#main').height($('#messages').height() + $('talk').height() + 120)
 
         // Update the members list
         $("#members").html('')
