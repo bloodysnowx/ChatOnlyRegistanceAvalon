@@ -92,17 +92,24 @@ class ChatRoom extends Actor {
     }
   }
   
-  def notify(kind: String, user: String, text: String, targetSet: Set[String]) {
-    val msg = JsObject(
-      Seq(
+  def notify(kind: String, user: String, text: String, targetSet: Set[String], values: Seq[(String, JsValue)]) {
+    val allValues = Seq(
         "kind" -> JsString(kind),
         "user" -> JsString(user),
         "message" -> JsString(text),
         "members" -> JsArray(members.toList.map(JsString)),
         "targetSet" -> JsArray(targetSet.toList.map(JsString))
-      )
-    )
+    ) union values
+    val msg = JsObject(allValues)
     chatChannel.push(msg)
+  }
+  
+  def notify(kind: String, user: String, text: String, targetSet: Set[String]) {
+    notify(kind, user, text, targetSet, Seq[(String, JsValue)]())
+  }
+  
+  def notifyAll(kind: String, user: String, text: String, values: Seq[(String, JsValue)]) {
+    notify(kind, user, text, members, values)
   }
   
   def notifyAll(kind: String, user: String, text: String) {
@@ -115,6 +122,8 @@ case class Quit(username: String)
 case class Talk(username: String, text: String)
 case class Whisper(username: String, target: String, text: String)
 case class NotifyJoin(username: String)
+case class SystemAll(username: String, text: String, values: Seq[(String, JsValue)])
+case class System(username: String, target: String, text: String, values: Seq[(String, JsValue)])
 
 case class Connected(enumerator:Enumerator[JsValue])
 case class CannotConnect(msg: String)
