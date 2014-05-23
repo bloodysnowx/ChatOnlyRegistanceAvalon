@@ -105,7 +105,7 @@ object Robot {
     def quest(username: String, decision: String, chatRoom: ActorRef):GameState = { this }
     def assassin(username: String, target: String, chatRoom: ActorRef):GameState = { this }
     def status(username: String, chatRoom: ActorRef):GameState = {
-      chatRoom ! Whisper("Robot", username, "current Lady is " + Lady)
+      talkLady(chatRoom)
       if(Ladied.length > 0) chatRoom ! Whisper("Robot", username, "Ladied are " + Ladied.mkString(", "))
       if(players.length > 0) chatRoom ! Whisper("Robot", username, "current Leader is " + getLeader + ", leaderCount is " + leaderCount)
       if(players.length > 0) chatRoom ! Whisper("Robot", username, "Leadar order is " + players.mkString(", "))
@@ -143,6 +143,10 @@ object Robot {
     chatRoom ! System("Robot", username, "You are Evil. Evils are " + Evils.mkString(", "), Seq("evils" -> JsArray(Evils.map(str => JsString(str))), "roll" -> JsString("Evil")))
   }
   
+  def talkLady(chatRoom: ActorRef) {
+    chatRoom ! SystemAll("Robot", "Lady is " + Lady, Seq("lady" -> JsString(Lady)))
+  }
+  
   object GameStartWaitingState extends GameState {
     override def startGame(username: String, chatRoom: ActorRef, members: List[String]):GameState = {
       if(members.length < 5) { chatRoom ! Talk("Robot", "members.length must be greater than 4"); return this }
@@ -173,7 +177,7 @@ object Robot {
       players = scala.util.Random.shuffle(players)
       if(players.length > 6) {
         Lady = players.last
-        chatRoom ! Talk("Robot", "Lady is " + Lady)
+        talkLady(chatRoom)
         Ladied = Lady :: Ladied
       }
     }

@@ -51,6 +51,12 @@ $(function() {
         	li.textContent = data.merlin
         	$('#merlin').append(li)
         }
+        if(data.lady != null) {
+        	$('#lady').html('')
+        	var li = document.createElement('li')
+        	li.textContent = data.lady
+        	$('#lady').append(li)
+        }
         $('#messages').prepend(el)
         
         $('#main').height($('#messages').height() + $('talk').height() + 120)
