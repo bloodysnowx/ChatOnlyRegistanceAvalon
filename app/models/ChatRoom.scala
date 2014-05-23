@@ -82,8 +82,16 @@ class ChatRoom extends Actor {
       else notifyAll("talk", username, text)
     }
     
+    case SystemAll(username, text, values) => {
+      notifyAll("talk", username, text, values)
+    }
+    
     case Whisper(username, target, text) => {
       notify("talk", username, text, Set(username, target))
+    }
+    
+    case System(username, target, text, values) => {
+      notify("talk", username, text, Set(username, target), values)
     }
     
     case Quit(username) => {

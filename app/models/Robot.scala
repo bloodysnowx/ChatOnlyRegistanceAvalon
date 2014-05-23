@@ -141,17 +141,20 @@ object Robot {
     def setupGames(chatRoom: ActorRef) {
       val forElection = scala.util.Random.shuffle(players)
       Assassin = forElection(2)
-      chatRoom ! Whisper("Robot", Assassin, "You are Assassin.")
+      
       if(players.length < 7) Evils = List(forElection(2), forElection(3))
       else if(players.length < 10) Evils = List(forElection(2), forElection(3), forElection(4))
       else Evils = List(forElection(2), forElection(3), forElection(4), forElection(5))
+      (players diff Evils).map(blue => chatRoom ! System("Robot", blue, "You are Justice.", Seq("roll" -> JsString("Justice"))))
       Merlin = forElection(0)
-      chatRoom ! Whisper("Robot", Merlin, "You are Merlin. Evils are " + Evils.mkString(", "))
+      chatRoom ! System("Robot", Merlin, "You are Merlin. Evils are " + Evils.mkString(", "), Seq("evils" -> JsArray(Evils.map(str => JsString(str))), "roll" -> JsString("Merlin")))
       if(players.length > 5) {
         Percival = forElection(1)
-        chatRoom ! Whisper("Robot", Percival, "You are Percival. Merlin is " + Merlin)
+        chatRoom ! System("Robot", Percival, "You are Percival. Merlin is " + Merlin, Seq("roll" -> JsString("Percival"), "merlin" -> JsString(Merlin)))
       }
-      Evils.map(evil => chatRoom ! Whisper("Robot", evil, "You are Evil. Evils are " + Evils.mkString(", ")))
+      Evils.map(evil => chatRoom ! System("Robot", evil, "You are Evil. Evils are " + Evils.mkString(", "), Seq("evils" -> JsArray(Evils.map(str => JsString(str))), "roll" -> JsString("Evil"))))
+      chatRoom ! System("Robot", Assassin, "You are Assassin.", Seq("roll" -> JsString("Assassin")))
+      
       players = scala.util.Random.shuffle(players)
       if(players.length > 6) {
         Lady = players.last

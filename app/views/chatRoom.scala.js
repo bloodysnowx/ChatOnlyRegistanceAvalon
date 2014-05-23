@@ -31,8 +31,27 @@ $(function() {
         $(el).addClass(data.kind)
         if(data.user == '@username') $(el).addClass('me')
         if(data.user == "Robot") $(el).addClass('robot')
+        if(data.evils != null) {
+        	$('#evils').html('')
+        	$(data.evils).each(function() {
+        		var li = document.createElement('li');
+        		li.textContent = this;
+        		$('#evils').append(li);
+        	})
+        }
+        if(data.roll != null) {
+        	$('#roll').html('')
+        	var li = document.createElement('li')
+        	li.textContent = data.roll
+        	$('#roll').append(li)
+        }
+        if(data.merlin != null) {
+        	$('#merlin').html('')
+        	var li = document.createElement('li')
+        	li.textContent = data.merlin
+        	$('#merlin').append(li)
+        }
         $('#messages').prepend(el)
-        
         
         $('#main').height($('#messages').height() + $('talk').height() + 120)
 
