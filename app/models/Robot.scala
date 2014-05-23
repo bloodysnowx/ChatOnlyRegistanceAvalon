@@ -114,11 +114,10 @@ object Robot {
       chatRoom ! Whisper("Robot", username, "voteCount is " + voteCount)
       chatRoom ! Whisper("Robot", username, "blueWins is " + blueWins + ", redWins is " + redWins)
       
-      if(username == Merlin) chatRoom ! Whisper("Robot", username, "You are Merlin. Evils are " + Evils.mkString(", "))
-      if(username == Percival) chatRoom ! Whisper("Robot", username, "You are Percival. Merlin is " + Merlin)
-      if(username == Assassin) chatRoom ! Whisper("Robot", username, "You are Assassin.")
-      if(Evils.contains(username)) chatRoom ! Whisper("Robot", username, "You are Evil. Evils are " + Evils.mkString(", "))
-
+      if(username == Merlin) whisperToMerlin(chatRoom)
+      if(username == Percival) whisperToPercival(chatRoom)
+      if(username == Assassin) whisperToAssassin(chatRoom)
+      if(Evils.contains(username)) whisperToEvil(username, chatRoom)
       
       this
     }
@@ -126,6 +125,22 @@ object Robot {
       helpMessages.map(message => chatRoom ! Whisper("Robot", username, message))
       return this
     }
+  }
+  
+  def whisperToMerlin(chatRoom: ActorRef) {
+    chatRoom ! System("Robot", Merlin, "You are Merlin. Evils are " + Evils.mkString(", "), Seq("evils" -> JsArray(Evils.map(str => JsString(str))), "roll" -> JsString("Merlin")))
+  }
+  
+  def whisperToPercival(chatRoom: ActorRef) {
+    chatRoom ! System("Robot", Percival, "You are Percival. Merlin is " + Merlin, Seq("roll" -> JsString("Percival"), "merlin" -> JsString(Merlin)))
+  }
+  
+  def whisperToAssassin(chatRoom: ActorRef) {
+    chatRoom ! System("Robot", Assassin, "You are Assassin.", Seq("roll" -> JsString("Assassin")))
+  }
+  
+  def whisperToEvil(username: String, chatRoom: ActorRef) {
+    chatRoom ! System("Robot", username, "You are Evil. Evils are " + Evils.mkString(", "), Seq("evils" -> JsArray(Evils.map(str => JsString(str))), "roll" -> JsString("Evil")))
   }
   
   object GameStartWaitingState extends GameState {
@@ -147,13 +162,13 @@ object Robot {
       else Evils = List(forElection(2), forElection(3), forElection(4), forElection(5))
       (players diff Evils).map(blue => chatRoom ! System("Robot", blue, "You are Justice.", Seq("roll" -> JsString("Justice"))))
       Merlin = forElection(0)
-      chatRoom ! System("Robot", Merlin, "You are Merlin. Evils are " + Evils.mkString(", "), Seq("evils" -> JsArray(Evils.map(str => JsString(str))), "roll" -> JsString("Merlin")))
+      whisperToMerlin(chatRoom)
       if(players.length > 5) {
         Percival = forElection(1)
-        chatRoom ! System("Robot", Percival, "You are Percival. Merlin is " + Merlin, Seq("roll" -> JsString("Percival"), "merlin" -> JsString(Merlin)))
+        whisperToPercival(chatRoom)
       }
-      Evils.map(evil => chatRoom ! System("Robot", evil, "You are Evil. Evils are " + Evils.mkString(", "), Seq("evils" -> JsArray(Evils.map(str => JsString(str))), "roll" -> JsString("Evil"))))
-      chatRoom ! System("Robot", Assassin, "You are Assassin.", Seq("roll" -> JsString("Assassin")))
+      Evils.map(evil => whisperToEvil(evil, chatRoom))
+      whisperToAssassin(chatRoom)
       
       players = scala.util.Random.shuffle(players)
       if(players.length > 6) {
