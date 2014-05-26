@@ -29,7 +29,8 @@ class GameObject {
   def existLady:Boolean = { players.length > 6 }
   def getQuestMembersCount:Int = { questMembersCount(players.length)(questCount) }
   
-  def setupGames {
+  def setupGames(members:List[String]) {
+    players = members
     val forElection = scala.util.Random.shuffle(players)
     Assassin = forElection(2)
     Evils = 

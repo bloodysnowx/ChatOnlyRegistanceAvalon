@@ -139,13 +139,12 @@ object Robot {
       if(members.length < 5) { chatRoom ! Talk("Robot", "members.length must be greater than 4"); return this }
       if(members.length > 10) { chatRoom ! Talk("Robot", "members.length must be less than 11"); return this }
       chatRoom ! Talk("Robot", "Game will start now!")
-      gameObject.players = members
-      setupGames(chatRoom)
+      setupGames(chatRoom, members)
       ElectWaitingState.enter(chatRoom)
     }
     
-    def setupGames(chatRoom: ActorRef) {
-      gameObject.setupGames
+    def setupGames(chatRoom: ActorRef, members: List[String]) {
+      gameObject.setupGames(members)
 
       gameObject.getJustices.map(blue => chatRoom ! System("Robot", blue, "You are Justice.", Seq("roll" -> JsString("Justice"))))
       whisperToMerlin(chatRoom)
