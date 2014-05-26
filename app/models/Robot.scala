@@ -107,7 +107,7 @@ object Robot {
     def status(username: String, chatRoom: ActorRef):GameState = {
       talkLady(chatRoom)
       if(Ladied.length > 0) chatRoom ! System("Robot", username, "Ladied are " + Ladied.mkString(", "), Seq("ladied" -> JsArray(Ladied.map(str => JsString(str)))))
-      if(players.length > 0) chatRoom ! Whisper("Robot", username, "current Leader is " + getLeader + ", leaderCount is " + leaderCount)
+      if(players.length > 0) talkCurrentLeader(chatRoom)
       if(players.length > 0) chatRoom ! Whisper("Robot", username, "Leadar order is " + players.mkString(", "))
       if(elected.length > 0) chatRoom ! Whisper("Robot", username, "elected are " + elected.mkString(", "))
       chatRoom ! Whisper("Robot", username, "questCount is " + questCount)
@@ -211,10 +211,14 @@ object Robot {
   
   def getLeader:String = { players(leaderCount % players.length) }
   
+  def talkCurrentLeader(chatRoom: ActorRef) {
+    chatRoom ! SystemAll("Robot", "current Leadar is " + getLeader + "(" + voteCount + "), ", Seq("Leader" -> JsString(getLeader)))
+  }
+  
   object ElectWaitingState extends GameState {
     override def enter(chatRoom: ActorRef):GameState = {
       chatRoom ! Talk("Robot", "Leadar order is " + players.mkString(", "))
-      chatRoom ! Talk("Robot", "current Leadar is " + getLeader + "(" + voteCount + "), " + helpMessages(3))
+      talkCurrentLeader(chatRoom)
       chatRoom ! Talk("Robot", "Please elect " + questMembersCount(players.length)(questCount) + " members")
       elected = List()
       this

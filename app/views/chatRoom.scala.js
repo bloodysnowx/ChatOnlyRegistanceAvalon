@@ -65,6 +65,12 @@ $(function() {
         		$('#ladied').append(li);
         	})
         }
+        if(data.leader != null) {
+        	$('#leader').html('')
+        	var li = document.createElement('li')
+        	li.textContent = data.leader
+        	$('#leader').append(li)
+        }
         $('#messages').prepend(el)
         
         $('#main').height($('#messages').height() + $('talk').height() + 120)
