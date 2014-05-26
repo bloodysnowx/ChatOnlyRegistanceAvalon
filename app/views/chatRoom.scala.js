@@ -71,6 +71,22 @@ $(function() {
         	li.textContent = data.leader
         	$('#leader').append(li)
         }
+        if(data.players != null) {
+        	$('#players').html('')
+        	$(data.players).each(function() {
+        		var li = document.createElement('li');
+        		li.textContent = this;
+        		$('#players').append(li);
+        	})
+        }
+        if(data.elected != null) {
+        	$('#elected').html('')
+        	$(data.elected).each(function() {
+        		var li = document.createElement('li');
+        		li.textContent = this;
+        		$('#elected').append(li);
+        	})
+        }
         $('#messages').prepend(el)
         
         $('#main').height($('#messages').height() + $('talk').height() + 120)
