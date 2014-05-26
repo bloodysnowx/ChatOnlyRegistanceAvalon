@@ -19,14 +19,6 @@ object Robot {
   var gameObject:GameObject = new GameObject()
   var state:GameState = GameStartWaitingState;
   
-  val questMembersCount = Array(Array(), Array(), Array(), Array(), Array(), 
-      Array(2, 3, 2, 3, 3),
-      Array(2, 3, 4, 3, 4),
-      Array(2, 3, 3, 4, 4),
-      Array(3, 4, 4, 5, 5),
-      Array(3, 4, 4, 5, 5),
-      Array(3, 4, 4, 5, 5))
-  
   def receiveMessage(event: JsValue, chatRoom: ActorRef) {
     Logger("robot").info(event.toString)
     val message = (event \ "message").as[String].trim()
@@ -208,7 +200,7 @@ object Robot {
     override def enter(chatRoom: ActorRef):GameState = {
       talkLeaderOrder(chatRoom)
       talkCurrentLeader(chatRoom)
-      chatRoom ! Talk("Robot", "Please elect " + questMembersCount(gameObject.players.length)(gameObject.questCount) + " members")
+      chatRoom ! Talk("Robot", "Please elect " + gameObject.getQuestMembersCount + " members")
       gameObject.elected = List()
       this
     }
@@ -223,7 +215,7 @@ object Robot {
       else {
         gameObject.elected = target :: gameObject.elected
         talkCurrentMembers(chatRoom)
-        if(gameObject.elected.length == questMembersCount(gameObject.players.length)(gameObject.questCount)) {
+        if(gameObject.elected.length == gameObject.getQuestMembersCount) {
           return VoteWaitingState.enter(chatRoom)
         }
       }

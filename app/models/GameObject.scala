@@ -15,6 +15,11 @@ class GameObject {
   var blueWins = 0
   var redWins = 0
   
+  val questMembersCount = Array(Array(), Array(), Array(), Array(), Array(), 
+    Array(2, 3, 2, 3, 3), Array(2, 3, 4, 3, 4),
+    Array(2, 3, 3, 4, 4), Array(3, 4, 4, 5, 5),
+    Array(3, 4, 4, 5, 5), Array(3, 4, 4, 5, 5))
+  
   def isMerlin(username: String):Boolean = { username == Merlin }
   def isPercival(username: String):Boolean = { username == Percival }
   def isAssassin(username: String):Boolean = { username == Assassin }
@@ -22,6 +27,7 @@ class GameObject {
   def getJustices():List[String] = { players diff Evils }
   def existPercival:Boolean = { players.length > 5 }
   def existLady:Boolean = { players.length > 6 }
+  def getQuestMembersCount:Int = { questMembersCount(players.length)(questCount) }
   
   def setupGames {
     val forElection = scala.util.Random.shuffle(players)
