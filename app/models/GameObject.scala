@@ -14,4 +14,9 @@ class GameObject {
   var questCount = 0
   var blueWins = 0
   var redWins = 0
+  
+  def isMerlin(username: String):Boolean = { username == Merlin }
+  def isPercival(username: String):Boolean = { username == Percival }
+  def isAssassin(username: String):Boolean = { username == Assassin }
+  def isEvil(username: String):Boolean = { Evils.contains(username) }
 }

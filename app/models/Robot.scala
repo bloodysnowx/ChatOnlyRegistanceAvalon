@@ -102,10 +102,10 @@ object Robot {
       chatRoom ! Whisper("Robot", username, "voteCount is " + gameObject.voteCount)
       chatRoom ! Whisper("Robot", username, "blueWins is " + gameObject.blueWins + ", redWins is " + gameObject.redWins)
       
-      if(username == gameObject.Merlin) whisperToMerlin(chatRoom)
-      if(username == gameObject.Percival) whisperToPercival(chatRoom)
-      if(username == gameObject.Assassin) whisperToAssassin(chatRoom)
-      if(gameObject.Evils.contains(username)) whisperToEvil(username, chatRoom)
+      if(gameObject.isMerlin(username)) whisperToMerlin(chatRoom)
+      if(gameObject.isPercival(username)) whisperToPercival(chatRoom)
+      if(gameObject.isAssassin(username)) whisperToAssassin(chatRoom)
+      if(gameObject.isEvil(username)) whisperToEvil(username, chatRoom)
       
       this
     }
