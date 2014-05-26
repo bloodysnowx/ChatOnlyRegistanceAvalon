@@ -36,6 +36,7 @@ object Robot {
     if(username.equals("Robot")) return
     if(message.startsWith("/")) {
       if(message.startsWith("/game start")) state = state.startGame(username, chatRoom, members)
+      else if(message.startsWith("/game reset")) resetGame(chatRoom)
       else if(message.startsWith("/lady ")) state = state.lady(username, splittedMessage(1), chatRoom)
       else if(message.startsWith("/elect ")) state = state.elect(username, splittedMessage(1), chatRoom)
       else if(message.startsWith("/vote ")) state = state.vote(username, splittedMessage(1), chatRoom)
@@ -45,6 +46,12 @@ object Robot {
       else if(message.startsWith("/help")) state = state.help(username, chatRoom)
       else state = state.help(username, chatRoom)
     }
+  }
+  
+  def resetGame(chatRoom: ActorRef) {
+    gameObject = new GameObject()
+    state = GameStartWaitingState
+    chatRoom ! Talk("Robot", "Reset Game.")
   }
   
   def apply(chatRoom: ActorRef) {
