@@ -307,7 +307,7 @@ object Robot {
       success = 0
       fail = 0
       questCount = questCount + 1
-      chatRoom ! Talk("Robot", "current Members are " + elected.mkString(", ") + ". " + helpMessages(6))
+      talkCurrentMembers(chatRoom)
       this
     }
     
