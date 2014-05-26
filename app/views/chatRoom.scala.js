@@ -57,6 +57,14 @@ $(function() {
         	li.textContent = data.lady
         	$('#lady').append(li)
         }
+        if(data.ladied != null) {
+        	$('#ladied').html('')
+        	$(data.ladied).each(function() {
+        		var li = document.createElement('li');
+        		li.textContent = this;
+        		$('#ladied').append(li);
+        	})
+        }
         $('#messages').prepend(el)
         
         $('#main').height($('#messages').height() + $('talk').height() + 120)

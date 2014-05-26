@@ -106,7 +106,7 @@ object Robot {
     def assassin(username: String, target: String, chatRoom: ActorRef):GameState = { this }
     def status(username: String, chatRoom: ActorRef):GameState = {
       talkLady(chatRoom)
-      if(Ladied.length > 0) chatRoom ! Whisper("Robot", username, "Ladied are " + Ladied.mkString(", "))
+      if(Ladied.length > 0) chatRoom ! System("Robot", username, "Ladied are " + Ladied.mkString(", "), Seq("ladied" -> JsArray(Ladied.map(str => JsString(str)))))
       if(players.length > 0) chatRoom ! Whisper("Robot", username, "current Leader is " + getLeader + ", leaderCount is " + leaderCount)
       if(players.length > 0) chatRoom ! Whisper("Robot", username, "Leadar order is " + players.mkString(", "))
       if(elected.length > 0) chatRoom ! Whisper("Robot", username, "elected are " + elected.mkString(", "))
@@ -186,7 +186,7 @@ object Robot {
   object LadyWaitingState extends GameState {
     override def enter(chatRoom: ActorRef):GameState = {
       if(Lady == null) return ElectWaitingState.enter(chatRoom)
-      chatRoom ! Talk("Robot", "Lady is " + Lady + ", " + helpMessages(2))
+      talkLady(chatRoom)
       this
     }
     
@@ -200,10 +200,10 @@ object Robot {
         return this
       }
       
-      chatRoom ! Talk("Robot", Lady + " は " + target + " の陣営を確認しました")
       chatRoom ! Whisper("Robot", Lady, target + " is " + (if (Evils.contains(target)) "red." else "blue."))
       Lady = target
       Ladied = target :: Ladied
+      chatRoom ! SystemAll("Robot", Lady + " は " + target + " の陣営を確認しました", Seq("ladied" -> JsArray(Ladied.map(str => JsString(str)))))
       
       ElectWaitingState.enter(chatRoom)
     }
