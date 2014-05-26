@@ -19,4 +19,25 @@ class GameObject {
   def isPercival(username: String):Boolean = { username == Percival }
   def isAssassin(username: String):Boolean = { username == Assassin }
   def isEvil(username: String):Boolean = { Evils.contains(username) }
+  def getJustices():List[String] = { players diff Evils }
+  def existPercival:Boolean = { players.length > 5 }
+  def existLady:Boolean = { players.length > 6 }
+  
+  def setupGames {
+    val forElection = scala.util.Random.shuffle(players)
+    Assassin = forElection(2)
+    Evils = 
+      if(players.length < 7) List(forElection(2), forElection(3))
+      else if(players.length < 10) List(forElection(2), forElection(3), forElection(4))
+      else List(forElection(2), forElection(3), forElection(4), forElection(5))
+    
+    Merlin = forElection(0)
+    if(existPercival) Percival = forElection(1)
+      
+    players = scala.util.Random.shuffle(players)
+    if(existLady) {
+      Lady = players.last
+      Ladied = Lady :: Ladied
+    }
+  }
 }

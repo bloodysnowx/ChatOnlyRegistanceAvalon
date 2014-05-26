@@ -146,28 +146,14 @@ object Robot {
     }
     
     def setupGames(chatRoom: ActorRef) {
-      val forElection = scala.util.Random.shuffle(gameObject.players)
-      gameObject.Assassin = forElection(2)
-      
-      if(gameObject.players.length < 7) gameObject.Evils = List(forElection(2), forElection(3))
-      else if(gameObject.players.length < 10) gameObject.Evils = List(forElection(2), forElection(3), forElection(4))
-      else gameObject.Evils = List(forElection(2), forElection(3), forElection(4), forElection(5))
-      (gameObject.players diff gameObject.Evils).map(blue => chatRoom ! System("Robot", blue, "You are Justice.", Seq("roll" -> JsString("Justice"))))
-      gameObject.Merlin = forElection(0)
+      gameObject.setupGames
+
+      gameObject.getJustices.map(blue => chatRoom ! System("Robot", blue, "You are Justice.", Seq("roll" -> JsString("Justice"))))
       whisperToMerlin(chatRoom)
-      if(gameObject.players.length > 5) {
-        gameObject.Percival = forElection(1)
-        whisperToPercival(chatRoom)
-      }
+      if(gameObject.existPercival) whisperToPercival(chatRoom)
       gameObject.Evils.map(evil => whisperToEvil(evil, chatRoom))
       whisperToAssassin(chatRoom)
-      
-      gameObject.players = scala.util.Random.shuffle(gameObject.players)
-      if(gameObject.players.length > 6) {
-        gameObject.Lady = gameObject.players.last
-        talkLady(chatRoom)
-        gameObject.Ladied = gameObject.Lady :: gameObject.Ladied
-      }
+      if(gameObject.existLady) talkLady(chatRoom)
     }
   }
   
