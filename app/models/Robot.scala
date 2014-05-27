@@ -184,7 +184,7 @@ object Robot {
   def getLeader:String = { gameObject.players(gameObject.leaderCount % gameObject.players.length) }
   
   def talkCurrentLeader(chatRoom: ActorRef) {
-    chatRoom ! SystemAll("Robot", "current Leadar is " + getLeader + "(" + gameObject.voteCount + "), ", Seq("Leader" -> JsString(getLeader)))
+    chatRoom ! SystemAll("Robot", "current Leadar is " + getLeader + "(" + gameObject.voteCount + "), ", Seq("leader" -> JsString(getLeader)))
   }
   
   def talkLeaderOrder(chatRoom: ActorRef) {

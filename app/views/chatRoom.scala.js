@@ -72,10 +72,14 @@ $(function() {
         }
         if(data.players != null) {
         	$('#players').html('')
+        	$('#electList').html('')
         	$(data.players).each(function() {
         		var li = document.createElement('li');
         		li.textContent = this;
         		$('#players').append(li);
+        		var option = document.createElement('option')
+        		option.textContent = this;
+        		$('#electList').append(option)
         	})
         }
         if(data.elected != null) {
@@ -88,7 +92,7 @@ $(function() {
         }
         $('#messages').prepend(el)
         
-        $('#main').height($('#messages').height() + $('talk').height() + 180)
+        $('#main').height($('#messages').height() + $('talk').height() + 200)
 
         // Update the members list
         $("#members").html('')
@@ -132,6 +136,16 @@ $(function() {
     	sendMessage("/vote false")
     }
     $('#voteFalse').click(voteFalseButtonClicked)
+    
+    var electButtonClicked = function() {
+    	sendMessage("/elect " + $('#electList option:selected').text())
+    }
+    $('#elect').click(electButtonClicked)
+    
+    var electResetButtonClicked = function() {
+    	sendMessage("/elect reset")
+    }
+    $('#electReset').click(electResetButtonClicked)
 
     chatSocket.onmessage = receiveEvent
 })
