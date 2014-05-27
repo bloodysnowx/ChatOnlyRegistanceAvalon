@@ -16,7 +16,7 @@ import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 
 object Robot {
-  var gameObject:GameObject = new GameObject()
+  var gameObject:GameObject = null
   var state:GameState = GameStartWaitingState;
   
   def receiveMessage(event: JsValue, chatRoom: ActorRef) {
@@ -41,7 +41,7 @@ object Robot {
   }
   
   def resetGame(chatRoom: ActorRef) {
-    gameObject = new GameObject()
+    gameObject = null
     state = GameStartWaitingState
     chatRoom ! Talk("Robot", "Reset Game.")
   }
@@ -92,6 +92,7 @@ object Robot {
     def quest(username: String, decision: String, chatRoom: ActorRef):GameState = { this }
     def assassin(username: String, target: String, chatRoom: ActorRef):GameState = { this }
     def status(username: String, chatRoom: ActorRef):GameState = {
+      if(gameObject == null) return this
       talkLady(chatRoom)
       if(gameObject.Ladied.length > 0) chatRoom ! System("Robot", username, "Ladied are " + gameObject.Ladied.mkString(", "), Seq("lady" -> JsString(gameObject.Lady), "ladied" -> JsArray(gameObject.Ladied.map(str => JsString(str)))))
       if(gameObject.players.length > 0) talkCurrentLeader(chatRoom)
@@ -144,7 +145,7 @@ object Robot {
     }
     
     def setupGames(chatRoom: ActorRef, members: List[String]) {
-      gameObject.setupGames(members)
+      gameObject = new GameObject(members)
 
       gameObject.getJustices.map(blue => chatRoom ! System("Robot", blue, "You are Justice.", Seq("roll" -> JsString("Justice"))))
       whisperToMerlin(chatRoom)

@@ -1,14 +1,17 @@
 package models
 
-class GameObject {
-  var players:List[String] = List()
-  var Merlin:String = null
-  var Percival:String = null
-  var Assassin:String = null
-  var Lady:String = null
-  var Evils:List[String] = List()
+class GameObject(members:List[String]) {
+  val forElection = scala.util.Random.shuffle(members)
+  val players:List[String] = scala.util.Random.shuffle(forElection)
+  val Merlin:String = forElection(0)
+  val Percival:String = if(existPercival) forElection(1) else null
+  val Assassin:String = forElection(2)
+  val Evils:List[String] = if(members.length < 7) List(forElection(2), forElection(3))
+      else if(members.length < 10) List(forElection(2), forElection(3), forElection(4))
+      else List(forElection(2), forElection(3), forElection(4), forElection(5))
+  var Lady:String = if(existLady) players.last else null
   var leaderCount = 0
-  var Ladied:List[String] = List()
+  var Ladied:List[String] = if(existLady) List(Lady) else List()
   var elected:List[String] = List()
   var voteCount = 0
   var questCount = 0
@@ -28,23 +31,4 @@ class GameObject {
   def existPercival:Boolean = { players.length > 5 }
   def existLady:Boolean = { players.length > 6 }
   def getQuestMembersCount:Int = { questMembersCount(players.length)(questCount) }
-  
-  def setupGames(members:List[String]) {
-    players = members
-    val forElection = scala.util.Random.shuffle(players)
-    Assassin = forElection(2)
-    Evils = 
-      if(players.length < 7) List(forElection(2), forElection(3))
-      else if(players.length < 10) List(forElection(2), forElection(3), forElection(4))
-      else List(forElection(2), forElection(3), forElection(4), forElection(5))
-    
-    Merlin = forElection(0)
-    if(existPercival) Percival = forElection(1)
-      
-    players = scala.util.Random.shuffle(players)
-    if(existLady) {
-      Lady = players.last
-      Ladied = Lady :: Ladied
-    }
-  }
 }
