@@ -80,6 +80,46 @@ body {
     height: 40px
 }
 
+#send {
+	position: absolute;
+	width: 120px;
+	height: 20px;
+	top: 55px;
+	left: 4px;
+}
+
+#status {
+	position: absolute;
+	width: 120px;
+	height: 20px;
+	top: 55px;
+	left: 128px;
+}
+
+#help {
+	position: absolute;
+	width: 120px;
+	height: 20px;
+	top: 55px;
+	left: 256px;
+}
+
+#voteTrue {
+	position: absolute;
+	width: 120px;
+	height: 20px;
+	top: 80px;
+	left: 4px;
+}
+
+#voteFalse {
+	position: absolute;
+	width: 120px;
+	height: 20px;
+	top: 80px;
+	left: 128px;
+}
+
 .message {
     padding: 4px 0;
     border-bottom: 1px solid #eee;

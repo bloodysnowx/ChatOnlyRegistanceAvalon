@@ -6,9 +6,8 @@ $(function() {
     var chatSocket = new WS("@routes.Application.chat(username).webSocketURL()")
     $("#onChat").show()
     
-    var sendMessage = function() {
-        chatSocket.send(JSON.stringify( {text: $("#talk").val()} ))
-        $("#talk").val('')
+    var sendMessage = function(message) {
+        chatSocket.send(JSON.stringify( {text: message} ))
     }
 
     var receiveEvent = function(event) {
@@ -89,7 +88,7 @@ $(function() {
         }
         $('#messages').prepend(el)
         
-        $('#main').height($('#messages').height() + $('talk').height() + 120)
+        $('#main').height($('#messages').height() + $('talk').height() + 180)
 
         // Update the members list
         $("#members").html('')
@@ -100,14 +99,39 @@ $(function() {
         })
     }
 
+    var sendButtonClicked = function() {
+    	sendMessage($("#talk").val())
+        $("#talk").val('')
+    }
+    $('#send').click(sendButtonClicked)
+    
     var handleReturnKey = function(e) {
         if(e.charCode == 13 || e.keyCode == 13) {
             e.preventDefault()
-            sendMessage()
+            sendButtonClicked()
         }
     }
-
     $("#talk").keypress(handleReturnKey)
+    
+    var statusButtonClicked = function() {
+    	sendMessage("/status")
+    }
+    $('#status').click(statusButtonClicked)
+    
+    var helpButtonClicked = function() {
+    	sendMessage("/help")
+    }
+    $('#help').click(helpButtonClicked)
+    
+    var voteTrueButtonClicked = function() {
+    	sendMessage("/vote true")
+    }
+    $('#voteTrue').click(voteTrueButtonClicked)
+    
+    var voteFalseButtonClicked = function() {
+    	sendMessage("/vote false")
+    }
+    $('#voteFalse').click(voteFalseButtonClicked)
 
     chatSocket.onmessage = receiveEvent
 })
