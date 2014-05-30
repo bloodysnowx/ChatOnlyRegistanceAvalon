@@ -143,7 +143,7 @@ object Robot {
     def setupGames(chatRoom: ActorRef, members: List[String]) {
       gameObject = new GameObject(members)
 
-      gameObject.getJustices.map(blue => chatRoom ! System("Robot", blue, "You are Justice.", Seq("roll" -> JsString("Justice"))))
+      gameObject.getJustices.map(blue => chatRoom ! System("Robot", blue, "You are Justice.", Seq("roll" -> JsString("Justice"), "evils" -> JsArray())))
       whisperToMerlin(chatRoom)
       if(gameObject.existPercival) whisperToPercival(chatRoom)
       gameObject.Evils.map(evil => whisperToEvil(evil, chatRoom))
