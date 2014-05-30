@@ -59,12 +59,6 @@ $(function() {
         		$('#ladied').append(li);
         	})
         }
-        if(data.leader != null) {
-        	$('#leader').html('')
-        	var li = document.createElement('li')
-        	li.textContent = data.leader
-        	$('#leader').append(li)
-        }
         if(data.players != null) {
         	$('#players').html('')
         	$('#electList').html('')
@@ -91,6 +85,15 @@ $(function() {
         		var li = document.createElement('li');
         		li.textContent = this;
         		$('#voted').append(li);
+        	})
+        }
+        if(data.leaderOrder != null) {
+        	$('#leaderOrder').html('')
+        	$(data.leaderOrder).each(function() {
+        		var li = document.createElement('li');
+        		li.textContent = this;
+        		if(this == data.leader) li.textContent = "☆ " + this + " ☆";
+        		$('#leaderOrder').append(li);
         	})
         }
         

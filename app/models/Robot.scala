@@ -181,11 +181,13 @@ object Robot {
   def getLeader:String = { gameObject.players(gameObject.leaderCount % gameObject.players.length) }
   
   def talkCurrentLeader(chatRoom: ActorRef) {
-    chatRoom ! SystemAll("Robot", "current Leadar is " + getLeader + "(" + gameObject.voteCount + "), ", Seq("leader" -> JsString(getLeader)))
+    chatRoom ! SystemAll("Robot", "現在のリーダーは " + (gameObject.voteCount + 1) + " 番目の " + getLeader + " さんです。", Seq("leader" -> JsString(getLeader)))
   }
   
   def talkLeaderOrder(chatRoom: ActorRef) {
-    chatRoom ! SystemAll("Robot", "Leadar order is " + gameObject.players.mkString(", "), Seq("players" -> JsArray(gameObject.players.map(str => JsString(str)))))
+    chatRoom ! SystemAll("Robot", "Leadar order is " + gameObject.players.mkString(", "), Seq("leader" -> JsString(getLeader),
+        "players" -> JsArray(gameObject.players.map(str => JsString(str))),
+        "leaderOrder" -> JsArray(Range(0, 5).map(x => JsString(gameObject.players((gameObject.leaderCount - gameObject.voteCount + x) % gameObject.players.length))))))
   }
   
   def talkCurrentMembers(chatRoom: ActorRef) {
