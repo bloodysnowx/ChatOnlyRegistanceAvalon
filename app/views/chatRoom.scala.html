@@ -15,14 +15,16 @@
     <div id="onChat" class="row">
         <div class="span10" id="main">
             <textarea id="talk"></textarea>
-            <button id="send" type="button">send</button>
-            <button id="help" type="button">help</button>
+            <button id="send" type="button">送信</button>
+            <button id="help" type="button">ヘルプ</button>
             <button id="status" type="button">status</button>
-            <button id="voteTrue" type="button">vote true</button>
-            <button id="voteFalse" type="button">vote false</button>
+            <button id="voteTrue" type="button">賛成</button>
+            <button id="voteFalse" type="button">反対</button>
             <select id="electList"></select>
             <button id="elect">elect</button>
             <button id="electReset">elect reset</button>
+            <button id="questTrue">クエスト成功</button>
+            <button id="questFalse">クエスト失敗</button>
             <div id="messages"></div>
         </div>
         <div class="span4">
@@ -43,6 +45,8 @@
             <ul id="leader"></ul>
             <h2>Elected</h2>
             <ul id="elected"></ul>
+            <h2>Voted</h2>
+            <ul id="voted"></ul>
             <h2>Players</h2>
             <ul id="players"></ul>
         </div>

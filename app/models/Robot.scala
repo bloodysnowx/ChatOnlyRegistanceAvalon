@@ -59,12 +59,7 @@ object Robot {
     }
     
     // Make the robot talk every 60 seconds
-    Akka.system.scheduler.schedule(
-      300 seconds,
-      300 seconds,
-      chatRoom,
-      Talk("Robot", "I'm still alive")
-    )
+    Akka.system.scheduler.schedule(300 seconds, 300 seconds, chatRoom, Talk("Robot", "I'm still alive"))
   }
   
   class GameState {
@@ -234,7 +229,7 @@ object Robot {
       oppositions = List[String]()
       gameObject.voteCount = gameObject.voteCount + 1
       gameObject.leaderCount = gameObject.leaderCount + 1
-      chatRoom ! Talk("Robot", gameObject.voteCount + "回目の投票を始めます。 " + helpMessages(5))
+      chatRoom ! SystemAll("Robot", gameObject.voteCount + "回目の投票を始めます。 " + helpMessages(5), Seq("voted" -> JsArray()))
       if(gameObject.voteCount == 5) QuestWaitingState.enter(chatRoom) else this
     }
     
@@ -244,11 +239,11 @@ object Robot {
         if(decision == "true") {
           voted = username :: voted
           supports = username :: supports
-          chatRoom ! Talk("Robot", username + " is voted.")
+          chatRoom ! SystemAll("Robot", "", Seq("voted" -> JsArray(voted.map(str => JsString(str)))))
         } else if(decision == "false") {
           voted = username :: voted
           oppositions = username :: oppositions
-          chatRoom ! Talk("Robot", username + " is voted.")
+          chatRoom ! SystemAll("Robot", "", Seq("voted" -> JsArray(voted.map(str => JsString(str)))))
         } else {
           chatRoom ! Talk("Robot", username + "'s selection is invalid.")
         }

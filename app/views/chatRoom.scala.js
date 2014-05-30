@@ -30,6 +30,7 @@ $(function() {
         $(el).addClass(data.kind)
         if(data.user == '@username') $(el).addClass('me')
         if(data.user == "Robot") $(el).addClass('robot')
+        if(data.message.length > 0) $('#messages').prepend(el)
         if(data.evils != null) {
         	$('#evils').html('')
         	$(data.evils).each(function() {
@@ -90,9 +91,16 @@ $(function() {
         		$('#elected').append(li);
         	})
         }
-        $('#messages').prepend(el)
+        if(data.voted != null) {
+        	$('#voted').html('')
+        	$(data.elected).each(function() {
+        		var li = document.createElement('li');
+        		li.textContent = this;
+        		$('#voted').append(li);
+        	})
+        }
         
-        $('#main').height($('#messages').height() + $('talk').height() + 200)
+        $('#main').height($('#messages').height() + $('talk').height() + 220)
 
         // Update the members list
         $("#members").html('')
@@ -146,6 +154,16 @@ $(function() {
     	sendMessage("/elect reset")
     }
     $('#electReset').click(electResetButtonClicked)
+    
+    var questTrueButtonClicked = function() {
+    	sendMessage("/quest true")
+    }
+    $('#questTrue').click(questTrueButtonClicked)
+    
+    var questFalseButtonClicked = function() {
+    	sendMessage("/quest false")
+    }
+    $('#questFalse').click(questFalseButtonClicked)
 
     chatSocket.onmessage = receiveEvent
 })
