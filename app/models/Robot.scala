@@ -36,6 +36,7 @@ object Robot {
       else if(message.startsWith("/assassin ")) state = state.assassin(username, splittedMessage(1), chatRoom)
       else if(message.startsWith("/status")) state = state.status(username, chatRoom)
       else if(message.startsWith("/help")) state = state.help(username, chatRoom)
+      else if(message.startsWith("/assassin ")) state = state.assassin(username, splittedMessage(1), chatRoom)
       else state = state.help(username, chatRoom)
     }
   }
@@ -195,7 +196,7 @@ object Robot {
     override def enter(chatRoom: ActorRef):GameState = {
       talkLeaderOrder(chatRoom)
       talkCurrentLeader(chatRoom)
-      chatRoom ! Talk("Robot", "Please elect " + gameObject.getQuestMembersCount + " members")
+      chatRoom ! SystemAll("Robot", "Please elect " + gameObject.getQuestMembersCount + " members", Seq("elected" -> JsArray()))
       gameObject.elected = List()
       this
     }
@@ -249,8 +250,8 @@ object Robot {
         }
         
         if(voted.length == gameObject.players.length) {
-          chatRoom ! Talk("Robot", "supports are " + supports.mkString(", "))
-          chatRoom ! Talk("Robot", "poopsitions are " + oppositions.mkString(", "))
+          chatRoom ! Talk("Robot", "賛成 : " + supports.mkString(", "))
+          chatRoom ! Talk("Robot", "反対 : " + oppositions.mkString(", "))
           if(supports.length > oppositions.length) {
             chatRoom ! Talk("Robot", "リーダーの選出が可決されました。")
             return QuestWaitingState.enter(chatRoom)
