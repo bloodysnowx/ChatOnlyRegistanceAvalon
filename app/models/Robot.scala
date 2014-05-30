@@ -116,7 +116,7 @@ object Robot {
   }
   
   def whisperToPercival(chatRoom: ActorRef) {
-    chatRoom ! System("Robot", gameObject.Percival, "You are Percival. Merlin is " + gameObject.Merlin, Seq("roll" -> JsString("Percival"), "merlin" -> JsString(gameObject.Merlin)))
+    chatRoom ! System("Robot", gameObject.Percival, "You are Percival. Merlin is " + gameObject.Merlin, Seq("roll" -> JsString("Percival(Merlin is " + gameObject.Merlin + ")")))
   }
   
   def whisperToAssassin(chatRoom: ActorRef) {

@@ -45,12 +45,6 @@ $(function() {
         	li.textContent = data.roll
         	$('#roll').append(li)
         }
-        if(data.merlin != null) {
-        	$('#merlin').html('')
-        	var li = document.createElement('li')
-        	li.textContent = data.merlin
-        	$('#merlin').append(li)
-        }
         if(data.lady != null) {
         	$('#lady').html('')
         	var li = document.createElement('li')
@@ -93,7 +87,7 @@ $(function() {
         }
         if(data.voted != null) {
         	$('#voted').html('')
-        	$(data.elected).each(function() {
+        	$(data.voted).each(function() {
         		var li = document.createElement('li');
         		li.textContent = this;
         		$('#voted').append(li);
