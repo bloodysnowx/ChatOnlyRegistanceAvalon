@@ -171,7 +171,7 @@ object Robot {
       
       chatRoom ! Whisper("Robot", gameObject.Lady, target + " is " + (if (gameObject.Evils.contains(target)) "red." else "blue."))
       gameObject.Lady = target
-      gameObject.Ladied = target :: gameObject.Ladied
+      gameObject.Ladied = gameObject.Ladied :+ target
       chatRoom ! SystemAll("Robot", gameObject.Lady + " は " + target + " の陣営を確認しました", Seq("lady" -> JsString(gameObject.Lady), "ladied" -> JsArray(gameObject.Ladied.map(str => JsString(str)))))
       
       ElectWaitingState.enter(chatRoom)
@@ -211,7 +211,7 @@ object Robot {
       } else if(!gameObject.players.contains(target)) chatRoom ! Talk("Robot", target + " does not exist.")
       else if(gameObject.elected.contains(target)) chatRoom ! Talk("Robot", target + " is already elected.")
       else {
-        gameObject.elected = target :: gameObject.elected
+        gameObject.elected = gameObject.elected :+ target
         talkCurrentMembers(chatRoom)
         if(gameObject.elected.length == gameObject.getQuestMembersCount) {
           return VoteWaitingState.enter(chatRoom)
@@ -240,12 +240,12 @@ object Robot {
       if(voted.contains(username)) chatRoom ! Talk("Robot", username + " is already voted.")
       else {
         if(decision == "true") {
-          voted = username :: voted
-          supports = username :: supports
+          voted = voted :+ username
+          supports = supports :+ username
           chatRoom ! SystemAll("Robot", "", Seq("voted" -> JsArray(voted.map(str => JsString(str)))))
         } else if(decision == "false") {
-          voted = username :: voted
-          oppositions = username :: oppositions
+          voted = voted :+ username
+          oppositions = oppositions :+ username
           chatRoom ! SystemAll("Robot", "", Seq("voted" -> JsArray(voted.map(str => JsString(str)))))
         } else {
           chatRoom ! Talk("Robot", username + "'s selection is invalid.")
@@ -287,11 +287,11 @@ object Robot {
       else if(!gameObject.elected.contains(username)) chatRoom ! Talk("Robot", username + " is not a quest member.")
       else {
         if(decision == "true") {
-          voted = username :: voted
+          voted = voted :+ username
           success = success + 1
           chatRoom ! Talk("Robot", username + " is voted.")
         } else if(decision == "false") {
-          voted = username :: voted
+          voted = voted :+ username
           fail = fail + 1
           chatRoom ! Talk("Robot", username + " is voted.")
         } else {
