@@ -72,7 +72,7 @@ object Robot {
           "/elect reset          --- 選んだメンバーを初期化します。",
           "/vote [true/false]    --- リーダーが選んだメンバーに対して投票します。賛成の場合は true , 反対の場合は false を入力してください。",
           "/quest [true/false]   --- 任務結果を提出します。成功の場合は true , 失敗の場合は false を入力してください。",
-          "/assasin [name]       --- [name]をマーリン候補として暗殺します。",
+          "/assassin [name]      --- [name]をマーリン候補として暗殺します。",
           "/status               --- 現在の状況を表示します。",
           "/help                 --- ヘルプメッセージを表示します。"
       )
