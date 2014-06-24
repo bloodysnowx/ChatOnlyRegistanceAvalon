@@ -90,7 +90,7 @@ object Robot {
     def status(username: String, chatRoom: ActorRef):GameState = {
       if(gameObject == null) return this
       talkLady(chatRoom)
-      if(gameObject.Ladied.length > 0) chatRoom ! System("Robot", username, "Ladied are " + gameObject.Ladied.mkString(", "), Seq("lady" -> JsString(gameObject.Lady), "ladied" -> JsArray(gameObject.Ladied.map(str => JsString(str)))))
+      if(gameObject.Ladied.length > 0) chatRoom ! System("Robot", username, "Ladied are " + gameObject.Ladied.mkString(", "), Seq("lady" -> JsString(gameObject.Lady.getOrElse("")), "ladied" -> JsArray(gameObject.Ladied.map(str => JsString(str)))))
       if(gameObject.players.length > 0) talkCurrentLeader(chatRoom)
       if(gameObject.players.length > 0) talkLeaderOrder(chatRoom)
       if(gameObject.elected.length > 0) talkCurrentMembers(chatRoom)
@@ -116,7 +116,10 @@ object Robot {
   }
   
   def whisperToPercival(chatRoom: ActorRef) {
-    chatRoom ! System("Robot", gameObject.Percival, "You are Percival. Merlin is " + gameObject.Merlin, Seq("roll" -> JsString("Percival(Merlin is " + gameObject.Merlin + ")")))
+    gameObject.Percival match {
+      case Some(p) => chatRoom ! System("Robot", p, "You are Percival. Merlin is " + gameObject.Merlin, Seq("roll" -> JsString("Percival(Merlin is " + gameObject.Merlin + ")")))
+      case None => ;
+    }
   }
   
   def whisperToAssassin(chatRoom: ActorRef) {
@@ -128,7 +131,10 @@ object Robot {
   }
   
   def talkLady(chatRoom: ActorRef) {
-    chatRoom ! SystemAll("Robot", "Lady is " + gameObject.Lady, Seq("lady" -> JsString(gameObject.Lady)))
+    gameObject.Lady match {
+      case Some(l) => chatRoom ! SystemAll("Robot", "Lady is " + l, Seq("lady" -> JsString(l)))
+      case None => ;
+    }
   }
   
   object GameStartWaitingState extends GameState {
@@ -169,11 +175,14 @@ object Robot {
         return this
       }
       
-      chatRoom ! Whisper("Robot", gameObject.Lady, target + " is " + (if (gameObject.Evils.contains(target)) "red." else "blue."))
-
-      gameObject.Ladied += target
-      chatRoom ! SystemAll("Robot", gameObject.Lady + " は " + target + " の陣営を確認しました", Seq("lady" -> JsString(gameObject.Lady), "ladied" -> JsArray(gameObject.Ladied.map(str => JsString(str)))))
-      gameObject.Lady = target
+      gameObject.Lady match {
+        case Some(l) => { chatRoom ! Whisper("Robot", l, target + " is " + (if (gameObject.Evils.contains(target)) "red." else "blue."))
+        	gameObject.Lady = Option(target)
+        	gameObject.Ladied += target
+        	chatRoom ! SystemAll("Robot", l + " は " + target + " の陣営を確認しました", Seq("lady" -> JsString(l), "ladied" -> JsArray(gameObject.Ladied.map(str => JsString(str)))))
+        }
+        case None => ;
+      }
       
       ElectWaitingState.enter(chatRoom)
     }
