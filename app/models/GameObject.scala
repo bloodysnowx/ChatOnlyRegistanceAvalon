@@ -1,5 +1,7 @@
 package models
 
+import scala.collection.mutable.MutableList
+
 class GameObject(members:List[String]) {
   val forElection = scala.util.Random.shuffle(members)
   val players:List[String] = scala.util.Random.shuffle(forElection)
@@ -11,8 +13,8 @@ class GameObject(members:List[String]) {
       else List(forElection(2), forElection(3), forElection(4), forElection(5))
   var Lady:String = if(existLady) players.last else null
   var leaderCount = 0
-  var Ladied:List[String] = if(existLady) List(Lady) else List()
-  var elected:List[String] = List()
+  val Ladied:MutableList[String] = if(existLady) MutableList(Lady) else MutableList()
+  val elected:MutableList[String] = MutableList[String]()
   var voteCount = 0
   var questCount = 0
   var blueWins = 0

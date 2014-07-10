@@ -3,21 +3,20 @@ package models
 import akka.actor._
 import scala.concurrent.duration._
 import scala.language.postfixOps
-
 import play.api._
 import play.api.libs.json._
 import play.api.libs.iteratee._
 import play.api.libs.concurrent._
-
 import akka.util.Timeout
 import akka.pattern.ask
-
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
+import scala.collection.mutable.MutableList
 
 object Robot {
   var gameObject:GameObject = null
   var state:GameState = GameStartWaitingState;
+  val kickList:MutableList[String] = MutableList[String]();
   
   def receiveMessage(event: JsValue, chatRoom: ActorRef) {
     Logger("robot").info(event.toString)
@@ -43,6 +42,7 @@ object Robot {
   
   def resetGame(chatRoom: ActorRef) {
     gameObject = null
+    kickList.clear();
     state = GameStartWaitingState
     chatRoom ! Talk("Robot", "Reset Game.")
   }
@@ -170,9 +170,10 @@ object Robot {
       }
       
       chatRoom ! Whisper("Robot", gameObject.Lady, target + " is " + (if (gameObject.Evils.contains(target)) "red." else "blue."))
-      gameObject.Lady = target
-      gameObject.Ladied = gameObject.Ladied :+ target
+
+      gameObject.Ladied += target
       chatRoom ! SystemAll("Robot", gameObject.Lady + " は " + target + " の陣営を確認しました", Seq("lady" -> JsString(gameObject.Lady), "ladied" -> JsArray(gameObject.Ladied.map(str => JsString(str)))))
+      gameObject.Lady = target
       
       ElectWaitingState.enter(chatRoom)
     }
@@ -199,19 +200,19 @@ object Robot {
       talkLeaderOrder(chatRoom)
       talkCurrentLeader(chatRoom)
       chatRoom ! SystemAll("Robot", "Please elect " + gameObject.getQuestMembersCount + " members", Seq("elected" -> JsArray()))
-      gameObject.elected = List()
+      gameObject.elected.clear
       this
     }
     override def elect(username: String, target: String, chatRoom: ActorRef):GameState = {
       if(username != getLeader) chatRoom ! Talk("Robot", username + " is not Leader.")
       else if(target == "reset") {
-        gameObject.elected = List()
+        gameObject.elected.clear
         chatRoom ! Talk("Robot", "選出したメンバーを初期化します")
         talkCurrentMembers(chatRoom)
       } else if(!gameObject.players.contains(target)) chatRoom ! Talk("Robot", target + " does not exist.")
       else if(gameObject.elected.contains(target)) chatRoom ! Talk("Robot", target + " is already elected.")
       else {
-        gameObject.elected = gameObject.elected :+ target
+        gameObject.elected += target
         talkCurrentMembers(chatRoom)
         if(gameObject.elected.length == gameObject.getQuestMembersCount) {
           return VoteWaitingState.enter(chatRoom)
