@@ -1,3 +1,5 @@
+import play.PlayScala
+
 name := """chat only Resistance Avalon"""
 
 version := "1.0-SNAPSHOT"
@@ -12,3 +14,5 @@ libraryDependencies ++= Seq(
   cache,
   ws
 )
+
+// play.Project.playScalaSettings
