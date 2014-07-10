@@ -6,14 +6,14 @@ class GameObject(members:List[String]) {
   val forElection = scala.util.Random.shuffle(members)
   val players:List[String] = scala.util.Random.shuffle(forElection)
   val Merlin:String = forElection(0)
-  val Percival:String = if(existPercival) forElection(1) else null
+  val Percival:Option[String] = if(existPercival) Some(forElection(1)) else None
   val Assassin:String = forElection(2)
   val Evils:List[String] = if(members.length < 7) List(forElection(2), forElection(3))
       else if(members.length < 10) List(forElection(2), forElection(3), forElection(4))
       else List(forElection(2), forElection(3), forElection(4), forElection(5))
-  var Lady:String = if(existLady) players.last else null
+  var Lady:Option[String] = if(existLady) Some(players.last) else None
   var leaderCount = 0
-  val Ladied:MutableList[String] = if(existLady) MutableList(Lady) else MutableList()
+  val Ladied:MutableList[String] = Lady match { case Some(l) =>  MutableList(l); case None => MutableList() }
   val elected:MutableList[String] = MutableList[String]()
   var voteCount = 0
   var questCount = 0
