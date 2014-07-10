@@ -71,15 +71,17 @@ class ChatRoom extends Actor {
     
     case Talk(username, text) => {
       val trimmedText = text.trim()
-      if(trimmedText.startsWith("/")) { 
-        if(trimmedText.startsWith("/whisper")) {
-          val splittedTexts = trimmedText.split(' ')
-          val target = splittedTexts(1)
-          notify("talk", username, text, Set(username, target))
+      if(members.contains(username)) { 
+        if(trimmedText.startsWith("/")) { 
+          if(trimmedText.startsWith("/whisper")) {
+            val splittedTexts = trimmedText.split(' ')
+            val target = splittedTexts(1)
+            notify("talk", username, text, Set(username, target))
+          }
+          else notify("talk", username, text, Set("Robot", username))
         }
-        else notify("talk", username, text, Set("Robot", username))
+        else notifyAll("talk", username, text)
       }
-      else notifyAll("talk", username, text)
     }
     
     case SystemAll(username, text, values) => {
@@ -97,6 +99,11 @@ class ChatRoom extends Actor {
     case Quit(username) => {
       members = members - username
       notifyAll("quit", username, "has left the room")
+    }
+    
+    case Kick(username, target) => {
+      members = members - target
+      notifyAll("quit", target, "has been kicked.")
     }
   }
   
@@ -132,6 +139,7 @@ case class Whisper(username: String, target: String, text: String)
 case class NotifyJoin(username: String)
 case class SystemAll(username: String, text: String, values: Seq[(String, JsValue)])
 case class System(username: String, target: String, text: String, values: Seq[(String, JsValue)])
+case class Kick(username: String, target: String)
 
 case class Connected(enumerator:Enumerator[JsValue])
 case class CannotConnect(msg: String)

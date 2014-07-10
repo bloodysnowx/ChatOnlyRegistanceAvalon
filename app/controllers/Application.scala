@@ -45,5 +45,4 @@ object Application extends Controller {
     ChatRoom.join(username)
     
   }
-  
 }

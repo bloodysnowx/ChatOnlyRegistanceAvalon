@@ -16,7 +16,6 @@ import scala.collection.mutable.MutableList
 object Robot {
   var gameObject:GameObject = null
   var state:GameState = GameStartWaitingState;
-  val kickList:MutableList[String] = MutableList[String]();
   
   def receiveMessage(event: JsValue, chatRoom: ActorRef) {
     Logger("robot").info(event.toString)
@@ -36,13 +35,18 @@ object Robot {
       else if(message.startsWith("/status")) state = state.status(username, chatRoom)
       else if(message.startsWith("/help")) state = state.help(username, chatRoom)
       else if(message.startsWith("/assassin ")) state = state.assassin(username, splittedMessage(1), chatRoom)
+      else if(message.startsWith("/kick ")) kick(username, splittedMessage(1), chatRoom)
       else state = state.help(username, chatRoom)
     }
   }
   
+  def kick(username: String, target: String, chatRoom: ActorRef) {
+    if(target.equals("Robot")) return
+    chatRoom ! Kick(username, target)
+  }
+  
   def resetGame(chatRoom: ActorRef) {
     gameObject = null
-    kickList.clear();
     state = GameStartWaitingState
     chatRoom ! Talk("Robot", "Reset Game.")
   }
@@ -67,6 +71,7 @@ object Robot {
     val helpMessages:Seq[String] = Seq(
           "These commands are available:",
           "/game start           --- ゲームを開始します。",
+          "/kick [name]          --- [name]を追放します。",
           "/lady [name]          --- [name]を占います。正義陣営の場合は[blue]と、悪陣営の場合は[red]と出力されます。",
           "/elect [name]         --- [name]をメンバーとして選びます。現在選んでいるメンバー一覧が全員に通知されます。",
           "/elect reset          --- 選んだメンバーを初期化します。",
