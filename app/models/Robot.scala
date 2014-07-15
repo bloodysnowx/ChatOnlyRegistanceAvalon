@@ -15,6 +15,7 @@ import scala.collection.mutable.MutableList
 
 object Robot {
     var gameObject: GameObject = null
+    
     var state: GameState = GameStartWaitingState;
 
     def receiveMessage(event: JsValue, chatRoom: ActorRef) {
@@ -91,6 +92,20 @@ object Robot {
         def vote(username: String, decision: String, chatRoom: ActorRef): GameState = { this }
         def quest(username: String, decision: String, chatRoom: ActorRef): GameState = { this }
         def assassin(username: String, target: String, chatRoom: ActorRef): GameState = { this }
+        
+        def sendData(chatRoom: ActorRef): Unit = {
+            if (gameObject == null) return
+            
+        }
+        def sendRoll(chatRoom: ActorRef): Unit = { }
+        def sendEvils(chatRoom: ActorRef): Unit = { }
+        def sendLady(chatRoom: ActorRef): Unit = { }
+        def sendLadied(chatRoom: ActorRef): Unit = { }
+        def sendLeaderOrder(chatRoom: ActorRef): Unit = { }
+        def sendElected(chatRoom: ActorRef): Unit = { }
+        def sendVoted(chatRoom: ActorRef): Unit = { }
+        def sendPlayers(chatRoom: ActorRef): Unit = { }
+        
         def status(username: String, chatRoom: ActorRef): GameState = {
             if (gameObject == null) return this
             talkLady(chatRoom)
@@ -229,9 +244,7 @@ object Robot {
             else {
                 gameObject.elected += target
                 talkCurrentMembers(chatRoom)
-                if (gameObject.elected.length == gameObject.getQuestMembersCount) {
-                    return VoteWaitingState.enter(chatRoom)
-                }
+                if (gameObject.elected.length == gameObject.getQuestMembersCount) return VoteWaitingState.enter(chatRoom)
             }
             this
         }
@@ -263,9 +276,7 @@ object Robot {
                     voted = voted :+ username
                     oppositions = oppositions :+ username
                     chatRoom ! SystemAll("Robot", "", Seq("voted" -> JsArray(voted.map(str => JsString(str)))))
-                } else {
-                    chatRoom ! Talk("Robot", username + "'s selection is invalid.")
-                }
+                } else chatRoom ! Talk("Robot", username + "'s selection is invalid.")
 
                 if (voted.length == gameObject.players.length) {
                     chatRoom ! Talk("Robot", "賛成 : " + supports.mkString(", "))
