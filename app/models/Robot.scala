@@ -165,9 +165,10 @@ object Robot {
   
   object LadyWaitingState extends GameState {
     override def enter(chatRoom: ActorRef):GameState = {
-      if(gameObject.Lady == null) return ElectWaitingState.enter(chatRoom)
-      talkLady(chatRoom)
-      this
+      return gameObject.Lady match {
+      case Some(l) => talkLady(chatRoom); this;
+      case None => ElectWaitingState.enter(chatRoom)
+      }
     }
     
     override def lady(username: String, target: String, chatRoom: ActorRef):GameState = {
