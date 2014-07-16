@@ -34,10 +34,10 @@ object Robot {
             else if (message.startsWith("/quest ")) state = state.quest(username, splittedMessage(1), chatRoom)
             else if (message.startsWith("/assassin ")) state = state.assassin(username, splittedMessage(1), chatRoom)
             else if (message.startsWith("/status")) state = state.status(username, chatRoom)
-            else if (message.startsWith("/help")) state = state.help(username, chatRoom)
+            else if (message.startsWith("/help")) state.help(username, chatRoom)
             else if (message.startsWith("/assassin ")) state = state.assassin(username, splittedMessage(1), chatRoom)
             else if (message.startsWith("/kick ")) kick(username, splittedMessage(1), chatRoom)
-            else state = state.help(username, chatRoom)
+            else state.help(username, chatRoom)
         }
     }
 
@@ -95,58 +95,37 @@ object Robot {
         
         def sendData(chatRoom: ActorRef): Unit = {
             if (gameObject == null) return
+            sendRoll(chatRoom)
+            sendVoted(chatRoom)
             
+            chatRoom ! SystemAll("Robot", "", Seq(
+                    "lady" -> JsString(gameObject.Lady.getOrElse("")),
+                    "ladied" -> JsArray(gameObject.Ladied.map(str => JsString(str))),
+                    "leaderOrder" -> JsArray(Range(0, 5).map(x => JsString(gameObject.players((gameObject.leaderCount - gameObject.voteCount + x) % gameObject.players.length)))),
+                    "elected" -> JsArray(gameObject.elected.map(str => JsString(str))),
+                    "voted" -> JsArray(gameObject.voted.map(str => JsString(str))),
+                    "players" -> JsArray(gameObject.players.map(str => JsString(str)))
+                    ))
         }
-        def sendRoll(chatRoom: ActorRef): Unit = { }
-        def sendEvils(chatRoom: ActorRef): Unit = { }
-        def sendLady(chatRoom: ActorRef): Unit = { }
-        def sendLadied(chatRoom: ActorRef): Unit = { }
-        def sendLeaderOrder(chatRoom: ActorRef): Unit = { }
-        def sendElected(chatRoom: ActorRef): Unit = { }
-        def sendVoted(chatRoom: ActorRef): Unit = { }
-        def sendPlayers(chatRoom: ActorRef): Unit = { }
+        def sendRoll(chatRoom: ActorRef): Unit = {
+            gameObject.getJustices.map(blue => chatRoom ! System("Robot", blue, "", Seq("roll" -> JsString("Justice"), "evils" -> JsArray())))
+            chatRoom ! System("Robot", gameObject.Merlin, "", Seq("roll" -> JsString("Merlin"), "evils" -> JsArray(gameObject.Evils.map(str => JsString(str)))))
+            gameObject.Percival match { case None => ; case Some(p) => chatRoom ! System("Robot", p, "" + gameObject.Merlin, Seq("roll" -> JsString("Percival(Merlin is " + gameObject.Merlin + ")"), "evils" -> JsArray())) }
+            gameObject.Evils.map(red => chatRoom ! System("Robot", red, "", Seq("evils" -> JsArray(gameObject.Evils.map(str => JsString(str))), "roll" -> JsString("Evil"))))
+            chatRoom ! System("Robot", gameObject.Assassin, "", Seq("roll" -> JsString("Assassin"))) 
+        }
+        def sendVoted(chatRoom: ActorRef): Unit = { chatRoom ! SystemAll("Robot", "", Seq("voted" -> JsArray(gameObject.voted.map(str => JsString(str))))) }
         
         def status(username: String, chatRoom: ActorRef): GameState = {
             if (gameObject == null) return this
-            talkLady(chatRoom)
-            if (gameObject.Ladied.length > 0) chatRoom ! System("Robot", username, "Ladied are " + gameObject.Ladied.mkString(", "), Seq("lady" -> JsString(gameObject.Lady.getOrElse("")), "ladied" -> JsArray(gameObject.Ladied.map(str => JsString(str)))))
-            if (gameObject.players.length > 0) talkCurrentLeader(chatRoom)
-            if (gameObject.players.length > 0) talkLeaderOrder(chatRoom)
-            if (gameObject.elected.length > 0) talkCurrentMembers(chatRoom)
+            sendData(chatRoom)
             chatRoom ! Whisper("Robot", username, "questCount is " + gameObject.questCount)
             chatRoom ! Whisper("Robot", username, "voteCount is " + gameObject.voteCount)
             chatRoom ! Whisper("Robot", username, "blueWins is " + gameObject.blueWins + ", redWins is " + gameObject.redWins)
 
-            if (gameObject.isMerlin(username)) whisperToMerlin(chatRoom)
-            if (gameObject.isPercival(username)) whisperToPercival(chatRoom)
-            if (gameObject.isAssassin(username)) whisperToAssassin(chatRoom)
-            if (gameObject.isEvil(username)) whisperToEvil(username, chatRoom)
-
             this
         }
-        def help(username: String, chatRoom: ActorRef): GameState = {
-            helpMessages.map(message => chatRoom ! Whisper("Robot", username, message))
-            return this
-        }
-    }
-
-    def whisperToMerlin(chatRoom: ActorRef) {
-        chatRoom ! System("Robot", gameObject.Merlin, "You are Merlin. Evils are " + gameObject.Evils.mkString(", "), Seq("evils" -> JsArray(gameObject.Evils.map(str => JsString(str))), "roll" -> JsString("Merlin")))
-    }
-
-    def whisperToPercival(chatRoom: ActorRef) {
-        gameObject.Percival match {
-            case Some(p) => chatRoom ! System("Robot", p, "You are Percival. Merlin is " + gameObject.Merlin, Seq("roll" -> JsString("Percival(Merlin is " + gameObject.Merlin + ")")))
-            case None => ;
-        }
-    }
-
-    def whisperToAssassin(chatRoom: ActorRef) {
-        chatRoom ! System("Robot", gameObject.Assassin, "You are Assassin.", Seq("roll" -> JsString("Assassin")))
-    }
-
-    def whisperToEvil(username: String, chatRoom: ActorRef) {
-        chatRoom ! System("Robot", username, "You are Evil. Evils are " + gameObject.Evils.mkString(", "), Seq("evils" -> JsArray(gameObject.Evils.map(str => JsString(str))), "roll" -> JsString("Evil")))
+        def help(username: String, chatRoom: ActorRef): Unit = { helpMessages.map(message => chatRoom ! Whisper("Robot", username, message)) }
     }
 
     def talkLady(chatRoom: ActorRef) {
@@ -167,13 +146,7 @@ object Robot {
 
         def setupGames(chatRoom: ActorRef, members: List[String]) {
             gameObject = new GameObject(members)
-
-            gameObject.getJustices.map(blue => chatRoom ! System("Robot", blue, "You are Justice.", Seq("roll" -> JsString("Justice"), "evils" -> JsArray())))
-            whisperToMerlin(chatRoom)
-            if (gameObject.existPercival) whisperToPercival(chatRoom)
-            gameObject.Evils.map(evil => whisperToEvil(evil, chatRoom))
-            whisperToAssassin(chatRoom)
-            if (gameObject.existLady) talkLady(chatRoom)
+            sendData(chatRoom)
         }
     }
 
@@ -215,19 +188,12 @@ object Robot {
         chatRoom ! SystemAll("Robot", "現在のリーダーは " + (gameObject.voteCount + 1) + " 番目の " + getLeader + " さんです。", Seq("leader" -> JsString(getLeader)))
     }
 
-    def talkLeaderOrder(chatRoom: ActorRef) {
-        chatRoom ! SystemAll("Robot", "Leadar order is " + gameObject.players.mkString(", "), Seq("leader" -> JsString(getLeader),
-            "players" -> JsArray(gameObject.players.map(str => JsString(str))),
-            "leaderOrder" -> JsArray(Range(0, 5).map(x => JsString(gameObject.players((gameObject.leaderCount - gameObject.voteCount + x) % gameObject.players.length))))))
-    }
-
     def talkCurrentMembers(chatRoom: ActorRef) {
         chatRoom ! SystemAll("Robot", "current Members are " + gameObject.elected.mkString(", "), Seq("elected" -> JsArray(gameObject.elected.map(str => JsString(str)))))
     }
 
     object ElectWaitingState extends GameState {
         override def enter(chatRoom: ActorRef): GameState = {
-            talkLeaderOrder(chatRoom)
             talkCurrentLeader(chatRoom)
             chatRoom ! SystemAll("Robot", "Please elect " + gameObject.getQuestMembersCount + " members", Seq("elected" -> JsArray()))
             gameObject.elected.clear
@@ -251,12 +217,11 @@ object Robot {
     }
 
     object VoteWaitingState extends GameState {
-        var voted = List[String]()
         var supports = List[String]()
         var oppositions = List[String]()
 
         override def enter(chatRoom: ActorRef): GameState = {
-            voted = List[String]()
+            gameObject.voted.clear()
             supports = List[String]()
             oppositions = List[String]()
             gameObject.voteCount = gameObject.voteCount + 1
@@ -266,19 +231,19 @@ object Robot {
         }
 
         override def vote(username: String, decision: String, chatRoom: ActorRef): GameState = {
-            if (voted.contains(username)) chatRoom ! Talk("Robot", username + " is already voted.")
+            if (gameObject.voted.contains(username)) chatRoom ! Talk("Robot", username + " is already voted.")
             else {
                 if (decision == "true") {
-                    voted = voted :+ username
+                    gameObject.voted += username
                     supports = supports :+ username
-                    chatRoom ! SystemAll("Robot", "", Seq("voted" -> JsArray(voted.map(str => JsString(str)))))
+                    sendVoted(chatRoom)
                 } else if (decision == "false") {
-                    voted = voted :+ username
+                    gameObject.voted += username
                     oppositions = oppositions :+ username
-                    chatRoom ! SystemAll("Robot", "", Seq("voted" -> JsArray(voted.map(str => JsString(str)))))
+                    sendVoted(chatRoom)
                 } else chatRoom ! Talk("Robot", username + "'s selection is invalid.")
 
-                if (voted.length == gameObject.players.length) {
+                if (gameObject.voted.length == gameObject.players.length) {
                     chatRoom ! Talk("Robot", "賛成 : " + supports.mkString(", "))
                     chatRoom ! Talk("Robot", "反対 : " + oppositions.mkString(", "))
                     if (supports.length > oppositions.length) {

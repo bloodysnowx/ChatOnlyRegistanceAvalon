@@ -15,6 +15,7 @@ class GameObject(members: List[String]) {
     var leaderCount = 0
     val Ladied: MutableList[String] = Lady match { case Some(l) => MutableList(l); case None => MutableList() }
     val elected: MutableList[String] = MutableList[String]()
+    val voted: MutableList[String] = MutableList[String]()
     var voteCount = 0
     var questCount = 0
     var blueWins = 0
