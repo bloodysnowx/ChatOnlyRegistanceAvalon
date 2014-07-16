@@ -30,6 +30,7 @@ class GameObject(members: List[String]) {
     def isPercival(username: String): Boolean = { username == Percival }
     def isAssassin(username: String): Boolean = { username == Assassin }
     def isEvil(username: String): Boolean = { Evils.contains(username) }
+    def isJustice(username: String): Boolean = { !isEvil(username) }
     def getJustices(): List[String] = { players diff Evils }
     def existPercival: Boolean = { players.length > 6 }
     def existLady: Boolean = { players.length > 6 }

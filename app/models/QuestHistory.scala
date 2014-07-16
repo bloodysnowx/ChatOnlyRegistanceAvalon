@@ -5,6 +5,9 @@ import scala.collection.mutable.MutableList
 class QuestHistory {
     val history: MutableList[Quest] = MutableList[Quest]()
     
+    def getSuccessCount: Int = { history.count(q => q.isSuccess.getOrElse(false) ) }
+    def getFailureCount: Int = { history.count(q => !q.isSuccess.getOrElse(true) ) }
+    
     class Quest {
         val history: MutableList[Elect] = MutableList[Elect]()
         var leader: Option[String] = None
