@@ -15,7 +15,6 @@ import scala.collection.mutable.MutableList
 
 object Robot {
     var gameObject: GameObject = null
-    
     var state: GameState = GameStartWaitingState;
 
     def receiveMessage(event: JsValue, chatRoom: ActorRef) {
@@ -96,7 +95,6 @@ object Robot {
         def sendData(chatRoom: ActorRef): Unit = {
             if (gameObject == null) return
             sendRoll(chatRoom)
-            sendVoted(chatRoom)
             
             chatRoom ! SystemAll("Robot", "", Seq(
                     "lady" -> JsString(gameObject.Lady.getOrElse("")),
@@ -319,13 +317,11 @@ object Robot {
         }
 
         override def assassin(username: String, target: String, chatRoom: ActorRef): GameState = {
-            if (username != gameObject.Assassin) chatRoom ! Talk("Robot", username + " is not Assassin.")
-            else if (!gameObject.players.contains(target)) chatRoom ! Talk("Robot", target + " does not exist.")
-            else if (target == gameObject.Merlin) chatRoom ! Talk("Robot", username + " assassinated Merlin(" + target + ")!")
-            else {
-                chatRoom ! Talk("Robot", username + " assassinated " + target + ". He is not Merlin.")
-                chatRoom ! Talk("Robot", "Merlin is " + gameObject.Merlin + ".")
-            }
+            chatRoom ! Talk("Robot", 
+                    if (username != gameObject.Assassin) username + " is not Assassin."
+                    else if (!gameObject.players.contains(target)) target + " does not exist."
+                    else if (target == gameObject.Merlin) username + " assassinated Merlin(" + target + ")!"
+                    else username + " assassinated " + target + ". He is not Merlin. Merlin is " + gameObject.Merlin + ".")
             this
         }
     }
