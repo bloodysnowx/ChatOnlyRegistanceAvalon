@@ -16,7 +16,10 @@ class GameObject(members: List[String]) {
     var leaderCount = 0
     private val Ladied: MutableList[String] = Lady match { case Some(l) => MutableList(l); case None => MutableList() }
     val elected: MutableList[String] = MutableList[String]()
-    val voted: MutableList[String] = MutableList[String]()
+    val supports = MutableList[String]()
+    val oppositions = MutableList[String]()
+    val successList = MutableList[String]()
+    val failList = MutableList[String]()
     var voteCount = 0
     var questCount = 0
     var blueWins = 0
@@ -40,17 +43,25 @@ class GameObject(members: List[String]) {
     def getLadied() = { Ladied }
     def getLeader: String = { players(leaderCount % players.length) }
     def forecastLady(username: String, target: String): Option[Boolean] = {
-        if(!username.equals(Lady.getOrElse("")) || !players.contains(target) || Ladied.contains(target)) return None
+        if(username != Lady.getOrElse("") || !players.contains(target) || Ladied.contains(target)) return None
         Lady = Option(target)
         Ladied += target
         if(Evils.contains(target)) Some(false)
         else Some(true)
     }
     def resetElection(username: String) { if(username.equals(getLeader)) elected.clear }
+    def startNewVote() { supports.clear(); oppositions.clear() }
     def electMember(username: String, target: String): Option[Boolean] = {
-        if(!username.equals(getLeader) || !players.contains(target) || elected.contains(target)) return None
+        if(username != getLeader || !players.contains(target) || elected.contains(target)) return None
         elected += target;
         if(elected.length < getQuestMembersCount) Option(false)
         else Option(true)
     }
+    def getVoted: List[String] = { List.concat(supports, oppositions) }
+    def vote(username: String, decision: Boolean): Option[Boolean] = {
+        if(getVoted.contains(username)) return None
+        (if(decision) supports else oppositions) += username
+        Option(getVoted.length == players.length)
+    }
+    def isVotePassed : Boolean = { supports.length > oppositions.length }
 }

@@ -102,7 +102,7 @@ object Robot {
                     "ladied" -> JsArray(gameObject.getLadied.map(str => JsString(str))),
                     "leaderOrder" -> JsArray(Range(0, 5).map(x => JsString(gameObject.players((gameObject.leaderCount - gameObject.voteCount + x) % gameObject.players.length)))),
                     "elected" -> JsArray(gameObject.elected.map(str => JsString(str))),
-                    "voted" -> JsArray(gameObject.voted.map(str => JsString(str))),
+                    "voted" -> JsArray(gameObject.getVoted.map(str => JsString(str))),
                     "players" -> JsArray(gameObject.players.map(str => JsString(str)))
                     ))
         }
@@ -113,7 +113,7 @@ object Robot {
             gameObject.Evils.map(red => chatRoom ! System("Robot", red, "", Seq("evils" -> JsArray(gameObject.Evils.map(str => JsString(str))), "roll" -> JsString("Evil"))))
             chatRoom ! System("Robot", gameObject.Assassin, "", Seq("roll" -> JsString("Assassin"))) 
         }
-        def sendVoted(chatRoom: ActorRef): Unit = { chatRoom ! SystemAll("Robot", "", Seq("voted" -> JsArray(gameObject.voted.map(str => JsString(str))))) }
+        def sendVoted(chatRoom: ActorRef): Unit = { chatRoom ! SystemAll("Robot", "", Seq("voted" -> JsArray(gameObject.getVoted.map(str => JsString(str))))) }
         
         def status(username: String, chatRoom: ActorRef): GameState = {
             if (gameObject == null) return this
@@ -169,13 +169,9 @@ object Robot {
         }
     }
 
-    def talkCurrentLeader(chatRoom: ActorRef) {
-        chatRoom ! SystemAll("Robot", "現在のリーダーは " + (gameObject.voteCount + 1) + " 番目の " + gameObject.getLeader + " さんです。", Seq("leaderOrder" -> JsArray(Range(0, 5).map(x => JsString(gameObject.players((gameObject.leaderCount - gameObject.voteCount + x) % gameObject.players.length)))), "leader" -> JsString(gameObject.getLeader)))
-    }
+    def talkCurrentLeader(chatRoom: ActorRef) { chatRoom ! SystemAll("Robot", "現在のリーダーは " + (gameObject.voteCount + 1) + " 番目の " + gameObject.getLeader + " さんです。", Seq("leaderOrder" -> JsArray(Range(0, 5).map(x => JsString(gameObject.players((gameObject.leaderCount - gameObject.voteCount + x) % gameObject.players.length)))), "leader" -> JsString(gameObject.getLeader))) }
 
-    def talkCurrentMembers(chatRoom: ActorRef) {
-        chatRoom ! SystemAll("Robot", "current Members are " + gameObject.elected.mkString(", "), Seq("elected" -> JsArray(gameObject.elected.map(str => JsString(str)))))
-    }
+    def talkCurrentMembers(chatRoom: ActorRef) { chatRoom ! SystemAll("Robot", "current Members are " + gameObject.elected.mkString(", "), Seq("elected" -> JsArray(gameObject.elected.map(str => JsString(str))))) }
 
     object ElectWaitingState extends GameState {
         override def enter(chatRoom: ActorRef): GameState = {
@@ -197,42 +193,31 @@ object Robot {
     }
 
     object VoteWaitingState extends GameState {
-        var supports = List[String]()
-        var oppositions = List[String]()
-
         override def enter(chatRoom: ActorRef): GameState = {
-            gameObject.voted.clear()
-            supports = List[String]()
-            oppositions = List[String]()
+            gameObject.startNewVote
             gameObject.voteCount = gameObject.voteCount + 1
             gameObject.leaderCount = gameObject.leaderCount + 1
             chatRoom ! SystemAll("Robot", gameObject.voteCount + "回目の投票を始めます。 " + helpMessages(5), Seq("voted" -> JsArray()))
             if (gameObject.voteCount == 5) QuestWaitingState.enter(chatRoom) else this
         }
 
-        override def vote(username: String, decision: String, chatRoom: ActorRef): GameState = {
-            if (gameObject.voted.contains(username)) chatRoom ! Talk("Robot", username + " is already voted.")
-            else {
-                if (decision == "true") {
-                    gameObject.voted += username
-                    supports = supports :+ username
-                    sendVoted(chatRoom)
-                } else if (decision == "false") {
-                    gameObject.voted += username
-                    oppositions = oppositions :+ username
-                    sendVoted(chatRoom)
-                } else chatRoom ! Talk("Robot", username + "'s selection is invalid.")
-
-                if (gameObject.voted.length == gameObject.players.length) {
-                    chatRoom ! Talk("Robot", "賛成 : " + supports.mkString(", "))
-                    chatRoom ! Talk("Robot", "反対 : " + oppositions.mkString(", "))
-                    if (supports.length > oppositions.length) {
-                        chatRoom ! Talk("Robot", "リーダーの選出が可決されました。")
-                        return QuestWaitingState.enter(chatRoom)
-                    } else {
-                        chatRoom ! Talk("Robot", "リーダーの選出が否決されました。")
-                        return ElectWaitingState.enter(chatRoom)
-                    }
+        override def vote(username: String, decisionStr: String, chatRoom: ActorRef): GameState = {
+            if (gameObject.getVoted.contains(username)) chatRoom ! Talk("Robot", username + " is already voted.")
+            var decision: Option[Boolean] = decisionStr match {
+                case "true" => Option(true)
+                case "false" => Option(false)
+                case _ => None
+            }
+            if (decision == None) { chatRoom ! Talk("Robot", "error!"); return this; }
+            
+            gameObject.vote(username, decision.get) match {
+                case None => chatRoom ! Talk("Robot", "error!") 
+                case Some(false) => sendVoted(chatRoom)
+                case Some(true) => {  
+                    chatRoom ! Talk("Robot", "賛成 : " + gameObject.supports.mkString(", "))
+                    chatRoom ! Talk("Robot", "反対 : " + gameObject.oppositions.mkString(", "))
+                    chatRoom ! Talk("Robot", "リーダーの選出が" + (if(gameObject.isVotePassed) "可決" else "否決") + "されました。")
+                    return if(gameObject.isVotePassed) QuestWaitingState.enter(chatRoom) else ElectWaitingState.enter(chatRoom)
                 }
             }
             this
