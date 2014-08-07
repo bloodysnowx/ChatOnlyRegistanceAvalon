@@ -202,12 +202,7 @@ object Robot {
         }
 
         override def vote(username: String, decisionStr: String, chatRoom: ActorRef): GameState = {
-            if (gameObject.getVoted.contains(username)) chatRoom ! Talk("Robot", username + " is already voted.")
-            var decision: Option[Boolean] = decisionStr match {
-                case "true" => Option(true)
-                case "false" => Option(false)
-                case _ => None
-            }
+            var decision: Option[Boolean] = decodeDecision(decisionStr)
             if (decision == None) { chatRoom ! Talk("Robot", "error!"); return this; }
             
             gameObject.vote(username, decision.get) match {
@@ -223,57 +218,43 @@ object Robot {
             this
         }
     }
+    
+    def decodeDecision(decision: String) : Option[Boolean] = {
+        decision match {
+            case "true" => Option(true)
+            case "false" => Option(false)
+            case _ => None
+        }
+    }
 
     object QuestWaitingState extends GameState {
-        var success = 0
-        var fail = 0
-        var voted = List[String]()
-
         override def enter(chatRoom: ActorRef): GameState = {
             gameObject.voteCount = 0
-            voted = List[String]()
-            success = 0
-            fail = 0
+            gameObject.startNewQuest
             gameObject.questCount = gameObject.questCount + 1
             talkCurrentMembers(chatRoom)
             this
         }
 
-        override def quest(username: String, decision: String, chatRoom: ActorRef): GameState = {
-            if (voted.contains(username)) chatRoom ! Talk("Robot", username + " is already voted.")
-            else if (!gameObject.elected.contains(username)) chatRoom ! Talk("Robot", username + " is not a quest member.")
-            else {
-                if (decision == "true") {
-                    voted = voted :+ username
-                    success = success + 1
-                    chatRoom ! Talk("Robot", username + " is voted.")
-                } else if (decision == "false") {
-                    voted = voted :+ username
-                    fail = fail + 1
-                    chatRoom ! Talk("Robot", username + " is voted.")
-                } else chatRoom ! Talk("Robot", username + "'s selection is invalid.")
-
-                if (voted.length == gameObject.elected.length) {
-                    if (fail == 0) {
-                        gameObject.blueWins = gameObject.blueWins + 1
-                        chatRoom ! Talk("Robot", "Quest is successed with " + fail + " fails.")
-                    } else if (fail == 1 && gameObject.players.length > 6 && gameObject.questCount == 4) {
-                        gameObject.blueWins = gameObject.blueWins + 1
-                        chatRoom ! Talk("Robot", "Quest is successed with " + fail + " fails.")
-                    } else {
-                        gameObject.redWins = gameObject.redWins + 1
-                        chatRoom ! Talk("Robot", "Quest is faild with " + fail + " fails.")
+        override def quest(username: String, decisionStr: String, chatRoom: ActorRef): GameState = {
+            var decision = decodeDecision(decisionStr)
+            if (decision == None) { chatRoom ! Talk("Robot", "error!"); return this; }
+            
+            gameObject.quest(username, decision.get) match {
+                case None => { chatRoom ! Talk("Robot", "error!"); return this; }
+                case Some(false) => return this
+                case Some(true) => {
+                    gameObject.processQuest
+                    chatRoom ! Talk("Robot", "Quest is " + (if(gameObject.isQuestSuccess) "successed" else "failed") +  " with " + gameObject.failList.length + " fails.")
+                    gameObject.isBlueWinTheQuests match {
+                        case None => if(gameObject.questCount > 1) LadyWaitingState.enter(chatRoom) else ElectWaitingState.enter(chatRoom)
+                        case Some(l) => {
+                            chatRoom ! Talk("Robot", "Quest is won by " + (if(l) "Blue" else "Red") + ". " + gameObject.blueWins + " / " + gameObject.redWins)
+                            if(l) AssassinateWaitingState.enter(chatRoom) else this
+                        }
                     }
-
-                    if (gameObject.blueWins == 3) {
-                        chatRoom ! Talk("Robot", "Quest is won by Blue. " + gameObject.blueWins + " / " + gameObject.redWins)
-                        return AssassinateWaitingState.enter(chatRoom)
-                    } else if (gameObject.redWins == 3) chatRoom ! Talk("Robot", "Quest is won by Red. " + gameObject.blueWins + " / " + gameObject.redWins)
-                    else if (gameObject.questCount > 1) return LadyWaitingState.enter(chatRoom) 
-                    else return ElectWaitingState.enter(chatRoom)
                 }
             }
-            this
         }
     }
 

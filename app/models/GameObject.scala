@@ -64,4 +64,15 @@ class GameObject(members: List[String]) {
         Option(getVoted.length == players.length)
     }
     def isVotePassed : Boolean = { supports.length > oppositions.length }
+    def startNewQuest() { successList.clear; failList.clear }
+    def getQuestVoted(): List[String] = { List.concat(successList, failList) }
+    
+    def quest(username: String, decision: Boolean): Option[Boolean] = {
+        if(getQuestVoted.contains(username) || !elected.contains(username)) return None
+        (if(decision) successList else failList) += username
+        return Option(getQuestVoted.length == elected.length)
+    }
+    def isQuestSuccess : Boolean = { failList.length == 0 || (failList.length == 1 && players.length > 6 && questCount == 4) }
+    def processQuest { if(isQuestSuccess) blueWins += 1 else redWins += 1 }
+    def isBlueWinTheQuests : Option[Boolean] = { if(blueWins == 3) Option(true) else if(redWins == 3) Option(false) else None }
 }
