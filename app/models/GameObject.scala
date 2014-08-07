@@ -14,7 +14,7 @@ class GameObject(members: List[String]) {
     else List(forElection(2), forElection(3), forElection(4), forElection(5))
     private var Lady: Option[String] = if (existLady) Some(players.last) else None
     var leaderCount = 0
-    val Ladied: MutableList[String] = Lady match { case Some(l) => MutableList(l); case None => MutableList() }
+    private val Ladied: MutableList[String] = Lady match { case Some(l) => MutableList(l); case None => MutableList() }
     val elected: MutableList[String] = MutableList[String]()
     val voted: MutableList[String] = MutableList[String]()
     var voteCount = 0
@@ -37,11 +37,20 @@ class GameObject(members: List[String]) {
     def existLady: Boolean = { players.length > 6 }
     def getQuestMembersCount: Int = { questMembersCount(players.length)(questCount) }
     def getCurrentLady() = { Lady }
+    def getLadied() = { Ladied }
+    def getLeader: String = { players(leaderCount % players.length) }
     def forecastLady(username: String, target: String): Option[Boolean] = {
         if(!username.equals(Lady.getOrElse("")) || !players.contains(target) || Ladied.contains(target)) return None
         Lady = Option(target)
         Ladied += target
         if(Evils.contains(target)) Some(false)
         else Some(true)
+    }
+    def resetElection(username: String) { if(username.equals(getLeader)) elected.clear }
+    def electMember(username: String, target: String): Option[Boolean] = {
+        if(!username.equals(getLeader) || !players.contains(target) || elected.contains(target)) return None
+        elected += target;
+        if(elected.length < getQuestMembersCount) Option(false)
+        else Option(true)
     }
 }

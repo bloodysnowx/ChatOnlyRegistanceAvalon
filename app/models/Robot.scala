@@ -99,7 +99,7 @@ object Robot {
             
             chatRoom ! SystemAll("Robot", "", Seq(
                     "lady" -> JsString(gameObject.getCurrentLady.getOrElse("")),
-                    "ladied" -> JsArray(gameObject.Ladied.map(str => JsString(str))),
+                    "ladied" -> JsArray(gameObject.getLadied.map(str => JsString(str))),
                     "leaderOrder" -> JsArray(Range(0, 5).map(x => JsString(gameObject.players((gameObject.leaderCount - gameObject.voteCount + x) % gameObject.players.length)))),
                     "elected" -> JsArray(gameObject.elected.map(str => JsString(str))),
                     "voted" -> JsArray(gameObject.voted.map(str => JsString(str))),
@@ -161,7 +161,7 @@ object Robot {
             gameObject.forecastLady(username, target) match {
                 case Some(l) => { 
                     Whisper("Robot", username, target + " is " + (if(l) "blue." else "red."))
-                    chatRoom ! SystemAll("Robot", username + " は " + target + " の陣営を確認しました", Seq("lady" -> JsString(target), "ladied" -> JsArray(gameObject.Ladied.map(str => JsString(str)))))
+                    chatRoom ! SystemAll("Robot", username + " は " + target + " の陣営を確認しました", Seq("lady" -> JsString(target), "ladied" -> JsArray(gameObject.getLadied.map(str => JsString(str)))))
                     ElectWaitingState.enter(chatRoom)
                 }
                 case None => { return this }
@@ -169,10 +169,8 @@ object Robot {
         }
     }
 
-    def getLeader: String = { gameObject.players(gameObject.leaderCount % gameObject.players.length) }
-
     def talkCurrentLeader(chatRoom: ActorRef) {
-        chatRoom ! SystemAll("Robot", "現在のリーダーは " + (gameObject.voteCount + 1) + " 番目の " + getLeader + " さんです。", Seq("leaderOrder" -> JsArray(Range(0, 5).map(x => JsString(gameObject.players((gameObject.leaderCount - gameObject.voteCount + x) % gameObject.players.length)))), "leader" -> JsString(getLeader)))
+        chatRoom ! SystemAll("Robot", "現在のリーダーは " + (gameObject.voteCount + 1) + " 番目の " + gameObject.getLeader + " さんです。", Seq("leaderOrder" -> JsArray(Range(0, 5).map(x => JsString(gameObject.players((gameObject.leaderCount - gameObject.voteCount + x) % gameObject.players.length)))), "leader" -> JsString(gameObject.getLeader)))
     }
 
     def talkCurrentMembers(chatRoom: ActorRef) {
@@ -187,18 +185,13 @@ object Robot {
             this
         }
         override def elect(username: String, target: String, chatRoom: ActorRef): GameState = {
-            if (username != getLeader) chatRoom ! Talk("Robot", username + " is not Leader.")
-            else if (target == "reset") {
-                gameObject.elected.clear
-                chatRoom ! Talk("Robot", "選出したメンバーを初期化します")
-                talkCurrentMembers(chatRoom)
-            } else if (!gameObject.players.contains(target)) chatRoom ! Talk("Robot", target + " does not exist.")
-            else if (gameObject.elected.contains(target)) chatRoom ! Talk("Robot", target + " is already elected.")
-            else {
-                gameObject.elected += target
-                talkCurrentMembers(chatRoom)
-                if (gameObject.elected.length == gameObject.getQuestMembersCount) return VoteWaitingState.enter(chatRoom)
+            if(target == "reset") gameObject.resetElection(username)
+            gameObject.electMember(username, target) match {
+                case Some(true) => { return VoteWaitingState.enter(chatRoom) }
+                case Some(false) => { }
+                case None => { chatRoom ! Talk("Robot", "error!") }
             }
+            talkCurrentMembers(chatRoom)
             this
         }
     }
