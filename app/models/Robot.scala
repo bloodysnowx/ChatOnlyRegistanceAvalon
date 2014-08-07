@@ -16,6 +16,7 @@ import scala.collection.mutable.MutableList
 object Robot {
     var gameObject: GameObject = null
     var state: GameState = GameStartWaitingState;
+    var gameOption: GameOptions = new GameOptions();
 
     def receiveMessage(event: JsValue, chatRoom: ActorRef) {
         Logger("robot").info(event.toString)
@@ -97,7 +98,7 @@ object Robot {
             sendRoll(chatRoom)
             
             chatRoom ! SystemAll("Robot", "", Seq(
-                    "lady" -> JsString(gameObject.Lady.getOrElse("")),
+                    "lady" -> JsString(gameObject.getCurrentLady.getOrElse("")),
                     "ladied" -> JsArray(gameObject.Ladied.map(str => JsString(str))),
                     "leaderOrder" -> JsArray(Range(0, 5).map(x => JsString(gameObject.players((gameObject.leaderCount - gameObject.voteCount + x) % gameObject.players.length)))),
                     "elected" -> JsArray(gameObject.elected.map(str => JsString(str))),
@@ -127,7 +128,7 @@ object Robot {
     }
 
     def talkLady(chatRoom: ActorRef) {
-        gameObject.Lady match {
+        gameObject.getCurrentLady match {
             case Some(l) => chatRoom ! SystemAll("Robot", "Lady is " + l, Seq("lady" -> JsString(l)))
             case None => ;
         }
@@ -150,33 +151,21 @@ object Robot {
 
     object LadyWaitingState extends GameState {
         override def enter(chatRoom: ActorRef): GameState = {
-            return gameObject.Lady match {
+            return gameObject.getCurrentLady match {
                 case Some(l) => talkLady(chatRoom); this;
                 case None => ElectWaitingState.enter(chatRoom)
             }
         }
 
         override def lady(username: String, target: String, chatRoom: ActorRef): GameState = {
-            if (!gameObject.players.contains(target)) {
-                chatRoom ! Talk("Robot", target + " does not exist.")
-                return this
-            }
-            if (gameObject.Ladied.contains(target)) {
-                chatRoom ! Talk("Robot", target + " は既に泉の乙女所持者です")
-                return this
-            }
-
-            gameObject.Lady match {
-                case Some(l) => {
-                    chatRoom ! Whisper("Robot", l, target + " is " + (if (gameObject.Evils.contains(target)) "red." else "blue."))
-                    gameObject.Lady = Option(target)
-                    gameObject.Ladied += target
-                    chatRoom ! SystemAll("Robot", l + " は " + target + " の陣営を確認しました", Seq("lady" -> JsString(l), "ladied" -> JsArray(gameObject.Ladied.map(str => JsString(str)))))
+            gameObject.forecastLady(username, target) match {
+                case Some(l) => { 
+                    Whisper("Robot", username, target + " is " + (if(l) "blue." else "red."))
+                    chatRoom ! SystemAll("Robot", username + " は " + target + " の陣営を確認しました", Seq("lady" -> JsString(target), "ladied" -> JsArray(gameObject.Ladied.map(str => JsString(str)))))
+                    ElectWaitingState.enter(chatRoom)
                 }
-                case None => ;
+                case None => { return this }
             }
-
-            ElectWaitingState.enter(chatRoom)
         }
     }
 
