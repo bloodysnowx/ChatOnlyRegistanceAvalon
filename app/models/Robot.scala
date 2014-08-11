@@ -160,7 +160,7 @@ object Robot {
         override def lady(username: String, target: String, chatRoom: ActorRef): GameState = {
             gameObject.forecastLady(username, target) match {
                 case Some(l) => { 
-                    Whisper("Robot", username, target + " is " + (if(l) "blue." else "red."))
+                    chatRoom ! Whisper("Robot", username, target + " is " + (if(l) "blue." else "red."))
                     chatRoom ! SystemAll("Robot", username + " は " + target + " の陣営を確認しました", Seq("lady" -> JsString(target), "ladied" -> JsArray(gameObject.getLadied.map(str => JsString(str)))))
                     ElectWaitingState.enter(chatRoom)
                 }
