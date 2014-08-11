@@ -182,13 +182,11 @@ object Robot {
         }
         override def elect(username: String, target: String, chatRoom: ActorRef): GameState = {
             if(target == "reset") gameObject.resetElection(username)
-            gameObject.electMember(username, target) match {
-                case Some(true) => { return VoteWaitingState.enter(chatRoom) }
-                case Some(false) => { }
-                case None => { chatRoom ! Talk("Robot", "error!") }
-            }
             talkCurrentMembers(chatRoom)
-            this
+            return gameObject.electMember(username, target) match {
+                case Some(l) => { talkCurrentMembers(chatRoom); if(l) VoteWaitingState.enter(chatRoom) else this }
+                case None => { chatRoom ! Talk("Robot", "error!"); this }
+            }
         }
     }
 
