@@ -37,6 +37,8 @@ object Robot {
             else if (message.startsWith("/help")) state.help(username, chatRoom)
             else if (message.startsWith("/assassin ")) state = state.assassin(username, splittedMessage(1), chatRoom)
             else if (message.startsWith("/kick ")) kick(username, splittedMessage(1), chatRoom)
+            else if (message.startsWith("/ping")) return
+            else if (message.startsWith("/pong")) return
             else state.help(username, chatRoom)
         }
     }
@@ -65,7 +67,7 @@ object Robot {
         }
 
         // Make the robot talk every 60 seconds
-        Akka.system.scheduler.schedule(300 seconds, 300 seconds, chatRoom, Talk("Robot", "I'm still alive"))
+        Akka.system.scheduler.schedule(20 seconds, 20 seconds, chatRoom, Talk("Robot", "/ping"))
     }
 
     class GameState {
@@ -101,6 +103,7 @@ object Robot {
                     "lady" -> JsString(gameObject.getCurrentLady.getOrElse("")),
                     "ladied" -> JsArray(gameObject.getLadied.map(str => JsString(str))),
                     "leaderOrder" -> JsArray(Range(0, 5).map(x => JsString(gameObject.players((gameObject.leaderCount - gameObject.voteCount + x) % gameObject.players.length)))),
+                    "leader" -> JsString(gameObject.getLeader),
                     "elected" -> JsArray(gameObject.elected.map(str => JsString(str))),
                     "voted" -> JsArray(gameObject.getVoted.map(str => JsString(str))),
                     "players" -> JsArray(gameObject.players.map(str => JsString(str)))

@@ -20,6 +20,10 @@ $(function() {
             $("#onError").show()
             return
         } else $("#onChat").show()
+
+        if(data.message.startsWith('/ping')) {
+            sendMessage("/pong")
+        }
         
         if($.inArray('@username', data.targetSet) < 0) return
 
