@@ -23,8 +23,10 @@ $(function() {
 
         if(data.message.startsWith('/ping')) {
             sendMessage("/pong")
+            return
         }
-        
+
+        if(data.message.startsWith('/pong')) return
         if($.inArray('@username', data.targetSet) < 0) return
 
         // Create the message element
@@ -66,6 +68,7 @@ $(function() {
         if(data.players != null) {
         	$('#players').html('')
         	$('#electList').html('')
+            $('#assassinList').html('')
         	$(data.players).each(function() {
         		var li = document.createElement('li');
         		li.textContent = this;
@@ -73,6 +76,7 @@ $(function() {
         		var option = document.createElement('option')
         		option.textContent = this;
         		$('#electList').append(option)
+                $('#assassinList').append(option)
         	})
         }
         if(data.elected != null) {
@@ -165,6 +169,16 @@ $(function() {
     	sendMessage("/quest false")
     }
     $('#questFalse').click(questFalseButtonClicked)
+
+    var assassinButtonClicked = function() {
+        sendMessage("/assassin " + $('#electList option:selected').text())
+    }
+    $('#assassin').click(assassinButtonClicked)
+
+    var ladyButtonClicked = function() {
+        sendMessage("/lady " + $('#electList option:selected').text())
+    }
+    $('#ladyCommand').click(ladyButtonClicked)
 
     chatSocket.onmessage = receiveEvent
 })

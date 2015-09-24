@@ -101,7 +101,7 @@ body {
 	width: 120px;
 	height: 20px;
 	top: 55px;
-	left: 256px;
+	left: 252px;
 }
 
 #voteTrue {
@@ -141,25 +141,40 @@ body {
 	width: 120px;
 	height: 20px;
 	top: 105px;
-	left: 256px;
+	left: 252px;
 }
 
 #questTrue {
 	position: absolute;
 	width: 120px;
 	height: 20px;
-	top: 130px;
-	left: 4px;
+	top: 80px;
+	left: 252px;
 }
 
 #questFalse {
 	position: absolute;
 	width: 120px;
 	height: 20px;
-	top: 130px;
-	left: 128px;
+	top: 80px;
+	left: 376px;
 }
 
+#assassin {
+    position: absolute;
+    width: 120px;
+    height: 20px;
+    top: 130px;
+    left: 4px;
+}
+
+#ladyCommand {
+    position: absolute;
+    width: 120px;
+    height: 20px;
+    top: 130px;
+    left: 128px;
+}
 
 .message {
     padding: 4px 0;
