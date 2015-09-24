@@ -104,6 +104,14 @@ body {
 	left: 252px;
 }
 
+#reconnect {
+    position: absolute;
+    width: 120px;
+    height: 20px;
+    top: 55px;
+    left: 376px;
+}
+
 #voteTrue {
 	position: absolute;
 	width: 120px;

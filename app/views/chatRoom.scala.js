@@ -3,11 +3,20 @@
 $(function() {
 
     var WS = window['MozWebSocket'] ? MozWebSocket : WebSocket
-    var chatSocket = new WS("@routes.Application.chat(username).webSocketURL()")
+    var chatSocket = null
     $("#onChat").show()
     
     var sendMessage = function(message) {
         chatSocket.send(JSON.stringify( {text: message} ))
+    }
+
+    var connectionCloseEvent = function(event) {
+        var el = $('<div class="message"><span></span><p></p></div>')
+        $("span", el).text('system')
+        $("p", el).text('connection lost')
+        $(el).addClass('robot')
+        $('#messages').prepend(el)
+        $('#main').height($('#messages').height() + $('talk').height() + 220)
     }
 
     var receiveEvent = function(event) {
@@ -180,5 +189,23 @@ $(function() {
     }
     $('#ladyCommand').click(ladyButtonClicked)
 
-    chatSocket.onmessage = receiveEvent
+    var reconnectButtonClicked = function() {
+        if (chatSocket) {
+            chatSocket.close(1000, 'user close for reconnect')
+            chatSocket.onmessage = null
+            chatSocket.onclose = null
+        }
+        chatSocket = new WS("@routes.Application.chat(username).webSocketURL()")
+        chatSocket.onmessage = receiveEvent
+        chatSocket.onclose = connectionCloseEvent
+    }
+    $('#reconnect').click(reconnectButtonClicked)
+
+    reconnectButtonClicked()
+
+    window.onunload = function() {
+        if (chatSocket) {
+            chatSocket.onclose = null;
+        }
+    }
 })
